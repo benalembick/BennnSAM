@@ -1,7 +1,6 @@
 import clsx from 'clsx';
 import {
   BarChart3,
-  Blocks,
   Bot,
   BrainCircuit,
   Building2,
@@ -30,6 +29,8 @@ import {
 } from 'lucide-react';
 import type React from 'react';
 import { useMemo, useState } from 'react';
+import bennnSamLogo from '../assets/bennnsam-logo-cropped.png';
+import bennnSamMark from '../assets/bennnsam-mark.png';
 import { Badge, Button, SearchInput } from './ui';
 
 export type RouteKey =
@@ -172,16 +173,16 @@ export function Sidebar({
   return (
     <aside className="flex h-full flex-col border-r border-slate-200/80 bg-white/90 shadow-[12px_0_35px_rgba(15,23,42,0.04)] backdrop-blur-xl">
       <div className={clsx('flex h-16 items-center border-b border-slate-200/80 px-3', collapsed ? 'justify-center' : 'justify-between gap-3')}>
-        <div className={clsx('flex min-w-0 items-center gap-3', collapsed && 'justify-center')}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-slate-950 to-cyan-700 text-white shadow-sm">
-            <Blocks className="h-4 w-4" />
-          </div>
+        <div className={clsx('flex min-w-0 items-center', collapsed ? 'justify-center' : 'flex-1')}>
           {!collapsed ? (
-            <div className="min-w-0">
-              <div className="truncate text-base font-semibold tracking-tight text-slate-950">BennnSam</div>
-              <div className="truncate text-[11px] font-semibold text-slate-500">SAM & SaaS Intelligence Platform</div>
-            </div>
-          ) : null}
+            <img
+              alt="BennnSam - SAM & SaaS Intelligence Platform"
+              className="h-11 w-auto max-w-[178px] object-contain"
+              src={bennnSamLogo}
+            />
+          ) : (
+            <img alt="BennnSam" className="h-10 w-10 rounded-lg object-contain shadow-sm" src={bennnSamMark} />
+          )}
         </div>
         {!collapsed ? (
           <Button aria-label="Collapse sidebar" icon={ChevronLeft} onClick={onCollapse} size="icon" type="button" variant="ghost" />
