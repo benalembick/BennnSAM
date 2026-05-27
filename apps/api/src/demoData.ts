@@ -1,0 +1,889 @@
+export type AppType = 'SaaS' | 'desktop' | 'server' | 'cloud' | 'AI tool' | 'browser app';
+export type LicenceMetric =
+  | 'user'
+  | 'device'
+  | 'install'
+  | 'core'
+  | 'processor'
+  | 'subscription'
+  | 'consumption';
+export type ComplianceStatus = 'over-licensed' | 'under-licensed' | 'adequately licensed';
+export type RiskRating = 'low' | 'medium' | 'high' | 'critical';
+
+export interface Application {
+  id: string;
+  name: string;
+  vendor: string;
+  category: string;
+  type: AppType;
+  version: string;
+  edition: string;
+  installCount: number;
+  activeUsers: number;
+  totalUsageMinutes: number;
+  activeUsageMinutes: number;
+  lastDetectedDate: string;
+  licenceRequirement: string;
+  gdprRisk: boolean;
+  eolDate: string | null;
+  upgradePath: string;
+  downgradePath: string;
+  tags: string[];
+  owner: string | null;
+  businessUnit: string;
+  approved: boolean;
+  monthlyCost: number;
+  renewalDate: string;
+  riskRating: RiskRating;
+}
+
+export interface Device {
+  id: string;
+  hostname: string;
+  os: string;
+  osVersion: string;
+  user: string;
+  department: string;
+  lastCheckIn: string;
+  cpuArchitecture: string;
+  installedSoftware: string[];
+  runningProcesses: string[];
+  browserSaasUsageEvents: string[];
+  customAttributes: Record<string, string>;
+  serialNumber: string;
+  assetTag: string;
+  location: string;
+  warrantyDate: string;
+  lifecycleStatus: 'active' | 'refresh due' | 'retired' | 'in repair';
+  costCentre: string;
+  notes: string;
+}
+
+export interface UsageEvent {
+  id: string;
+  appId: string;
+  appName: string;
+  userId: string;
+  userName: string;
+  deviceId: string;
+  eventType: 'process_open' | 'browser_url' | 'sso_assignment' | 'manual_import';
+  startedAt: string;
+  endedAt: string;
+  activeMinutes: number;
+  totalMinutes: number;
+  source: 'agent' | 'integration' | 'manual import';
+}
+
+export interface SaaSDetection {
+  id: string;
+  saasAppName: string;
+  domain: string;
+  vendor: string;
+  category: string;
+  detectedUsers: number;
+  assignedUsers: number;
+  paidSeats: number;
+  activeUsers: number;
+  inactiveUsers: number;
+  monthlyCost: number;
+  riskRating: RiskRating;
+  renewalDate: string;
+  approved: boolean;
+  source: 'browser import' | 'SSO import' | 'finance CSV' | 'manual';
+}
+
+export interface LicenceEntitlement {
+  id: string;
+  applicationId: string;
+  applicationName: string;
+  contractName: string;
+  vendor: string;
+  sku: string;
+  licenceMetric: LicenceMetric;
+  purchasedQuantity: number;
+  assignedQuantity: number;
+  consumedQuantity: number;
+  complianceStatus: ComplianceStatus;
+  renewalDate: string;
+  contractOwner: string;
+  costPerLicence: number;
+  trueUpTrueDownNotes: string;
+  rule: string;
+}
+
+export interface CostRecord {
+  id: string;
+  applicationName: string;
+  vendor: string;
+  department: string;
+  businessUnit: string;
+  userName: string;
+  deviceName: string;
+  monthlyCost: number;
+  allocationMethod: 'seat' | 'usage' | 'device' | 'manual';
+  negotiatedPrice: number | null;
+}
+
+export interface SavingsRecommendation {
+  id: string;
+  type: 'cancel unused' | 'downgrade' | 'renewal prep' | 'consolidate vendors';
+  applicationName: string;
+  department: string;
+  estimatedAnnualSavings: number;
+  reason: string;
+  status: 'new' | 'reviewing' | 'approved' | 'dismissed';
+}
+
+export interface ComplianceResult {
+  id: string;
+  finding: string;
+  applicationName: string;
+  category: 'under-licensed' | 'EOL' | 'unapproved SaaS' | 'privacy' | 'missing owner' | 'old device version';
+  severity: RiskRating;
+  riskScore: number;
+  owner: string | null;
+  evidence: string;
+  dueDate: string;
+}
+
+export interface Integration {
+  id: string;
+  name: string;
+  category: 'identity' | 'endpoint' | 'service management' | 'finance' | 'api';
+  connectionStatus: 'connected' | 'needs attention' | 'not connected';
+  enabled: boolean;
+  lastSync: string | null;
+  syncLogs: Array<{ at: string; status: 'success' | 'warning' | 'failed'; message: string }>;
+  mapping: Array<{ source: string; target: string; transform?: string }>;
+}
+
+export interface ExportWorkflow {
+  id: string;
+  name: string;
+  sourceDataset: string;
+  filters: string;
+  mappedFields: Array<{ source: string; destination: string }>;
+  destination: 'webhook' | 'CSV' | 'REST API' | 'Supabase table' | 'ServiceNow mock endpoint';
+  schedule: 'manual' | 'daily' | 'weekly';
+  enabled: boolean;
+  executionLogs: Array<{ at: string; status: 'success' | 'failed'; records: number; message: string }>;
+}
+
+export interface CustomInventoryRule {
+  id: string;
+  name: string;
+  matchType:
+    | 'executable'
+    | 'folder path'
+    | 'registry key'
+    | 'SaaS domain'
+    | 'file metadata'
+    | 'process name';
+  matchValue: string;
+  normalizedApplication: string;
+  edition: string;
+  classification: 'trial' | 'paid' | 'enterprise' | 'professional';
+  confidence: number;
+  enabled: boolean;
+}
+
+export interface NormalizationReview {
+  id: string;
+  rawName: string;
+  suggestedApplication: string;
+  vendorSuggestion: string;
+  confidenceScore: number;
+  duplicateCandidates: string[];
+  status: 'pending' | 'approved' | 'merged' | 'split' | 'overridden';
+  analyst: string | null;
+  overrideHistory: string[];
+}
+
+export interface ReportDefinition {
+  id: string;
+  name: string;
+  description: string;
+  dataset: string;
+  filters: string[];
+  exportFormats: Array<'CSV' | 'JSON'>;
+  savedConfigurations: number;
+}
+
+export const departments = [
+  { id: 'dept-it', name: 'IT Operations', businessUnit: 'Technology' },
+  { id: 'dept-eng', name: 'Engineering', businessUnit: 'Product' },
+  { id: 'dept-design', name: 'Design', businessUnit: 'Product' },
+  { id: 'dept-fin', name: 'Finance', businessUnit: 'Corporate' },
+  { id: 'dept-sales', name: 'Sales', businessUnit: 'Revenue' },
+  { id: 'dept-sec', name: 'Security', businessUnit: 'Risk' }
+];
+
+export const users = [
+  { id: 'usr-001', name: 'Ava Collins', email: 'ava.collins@demo.bennnsam.local', role: 'Platform Admin', department: 'IT Operations' },
+  { id: 'usr-002', name: 'Marcus Tan', email: 'marcus.tan@demo.bennnsam.local', role: 'SAM Manager', department: 'Finance' },
+  { id: 'usr-003', name: 'Priya Singh', email: 'priya.singh@demo.bennnsam.local', role: 'Licence Manager', department: 'IT Operations' },
+  { id: 'usr-004', name: 'Noah Rivera', email: 'noah.rivera@demo.bennnsam.local', role: 'Security Viewer', department: 'Security' },
+  { id: 'usr-005', name: 'Iris Chen', email: 'iris.chen@demo.bennnsam.local', role: 'Department Owner', department: 'Design' },
+  { id: 'usr-006', name: 'Ben Martin', email: 'ben.martin@demo.bennnsam.local', role: 'Read Only', department: 'Engineering' },
+  { id: 'usr-007', name: 'Sofia Walsh', email: 'sofia.walsh@demo.bennnsam.local', role: 'Finance Viewer', department: 'Finance' }
+];
+
+export const applications: Application[] = [
+  {
+    id: 'app-m365',
+    name: 'Microsoft 365',
+    vendor: 'Microsoft',
+    category: 'Productivity',
+    type: 'SaaS',
+    version: 'Evergreen',
+    edition: 'E5',
+    installCount: 139,
+    activeUsers: 126,
+    totalUsageMinutes: 96400,
+    activeUsageMinutes: 72100,
+    lastDetectedDate: '2026-05-25',
+    licenceRequirement: 'Named user subscription',
+    gdprRisk: true,
+    eolDate: null,
+    upgradePath: 'Add Copilot add-on for eligible makers',
+    downgradePath: 'E3 for low security feature usage',
+    tags: ['approved', 'tier-1', 'identity-linked'],
+    owner: 'Ava Collins',
+    businessUnit: 'Corporate',
+    approved: true,
+    monthlyCost: 7052,
+    renewalDate: '2026-08-18',
+    riskRating: 'medium'
+  },
+  {
+    id: 'app-adobe',
+    name: 'Adobe Creative Cloud',
+    vendor: 'Adobe',
+    category: 'Creative',
+    type: 'SaaS',
+    version: '2026',
+    edition: 'All Apps',
+    installCount: 42,
+    activeUsers: 21,
+    totalUsageMinutes: 20870,
+    activeUsageMinutes: 10940,
+    lastDetectedDate: '2026-05-24',
+    licenceRequirement: 'Named user subscription',
+    gdprRisk: false,
+    eolDate: null,
+    upgradePath: 'All Apps Pro for premium stock use',
+    downgradePath: 'Single App for low breadth users',
+    tags: ['approved', 'creative'],
+    owner: 'Iris Chen',
+    businessUnit: 'Product',
+    approved: true,
+    monthlyCost: 2520,
+    renewalDate: '2026-07-12',
+    riskRating: 'low'
+  },
+  {
+    id: 'app-autocad',
+    name: 'AutoCAD',
+    vendor: 'Autodesk',
+    category: 'Engineering',
+    type: 'desktop',
+    version: '2025.1',
+    edition: 'Commercial',
+    installCount: 18,
+    activeUsers: 8,
+    totalUsageMinutes: 11320,
+    activeUsageMinutes: 5820,
+    lastDetectedDate: '2026-05-22',
+    licenceRequirement: 'Named user subscription',
+    gdprRisk: false,
+    eolDate: '2027-03-31',
+    upgradePath: 'AutoCAD 2026',
+    downgradePath: 'Viewer-only for occasional reviewers',
+    tags: ['approved', 'specialist'],
+    owner: 'Ben Martin',
+    businessUnit: 'Product',
+    approved: true,
+    monthlyCost: 3042,
+    renewalDate: '2026-06-30',
+    riskRating: 'medium'
+  },
+  {
+    id: 'app-slack',
+    name: 'Slack',
+    vendor: 'Salesforce',
+    category: 'Collaboration',
+    type: 'SaaS',
+    version: 'Evergreen',
+    edition: 'Business+',
+    installCount: 98,
+    activeUsers: 91,
+    totalUsageMinutes: 68820,
+    activeUsageMinutes: 51940,
+    lastDetectedDate: '2026-05-26',
+    licenceRequirement: 'Named user subscription',
+    gdprRisk: true,
+    eolDate: null,
+    upgradePath: 'Enterprise Grid for legal hold needs',
+    downgradePath: 'Pro for non-regulated teams',
+    tags: ['approved', 'collaboration'],
+    owner: 'Ava Collins',
+    businessUnit: 'Corporate',
+    approved: true,
+    monthlyCost: 1832,
+    renewalDate: '2026-09-05',
+    riskRating: 'medium'
+  },
+  {
+    id: 'app-zoom',
+    name: 'Zoom',
+    vendor: 'Zoom',
+    category: 'Meetings',
+    type: 'SaaS',
+    version: 'Evergreen',
+    edition: 'Business',
+    installCount: 88,
+    activeUsers: 54,
+    totalUsageMinutes: 32420,
+    activeUsageMinutes: 21120,
+    lastDetectedDate: '2026-05-26',
+    licenceRequirement: 'Named host subscription',
+    gdprRisk: true,
+    eolDate: null,
+    upgradePath: 'Business Plus for phone add-on',
+    downgradePath: 'Basic for viewers',
+    tags: ['approved', 'meetings'],
+    owner: 'Marcus Tan',
+    businessUnit: 'Corporate',
+    approved: true,
+    monthlyCost: 1320,
+    renewalDate: '2026-07-28',
+    riskRating: 'medium'
+  },
+  {
+    id: 'app-jira',
+    name: 'Jira',
+    vendor: 'Atlassian',
+    category: 'Work Management',
+    type: 'SaaS',
+    version: 'Cloud',
+    edition: 'Premium',
+    installCount: 64,
+    activeUsers: 58,
+    totalUsageMinutes: 42190,
+    activeUsageMinutes: 28770,
+    lastDetectedDate: '2026-05-25',
+    licenceRequirement: 'Named user subscription',
+    gdprRisk: false,
+    eolDate: null,
+    upgradePath: 'Enterprise for cross-site controls',
+    downgradePath: 'Standard for read-mostly teams',
+    tags: ['approved', 'engineering'],
+    owner: 'Ben Martin',
+    businessUnit: 'Product',
+    approved: true,
+    monthlyCost: 960,
+    renewalDate: '2026-11-15',
+    riskRating: 'low'
+  },
+  {
+    id: 'app-figma',
+    name: 'Figma',
+    vendor: 'Figma',
+    category: 'Design',
+    type: 'SaaS',
+    version: 'Evergreen',
+    edition: 'Organization',
+    installCount: 31,
+    activeUsers: 27,
+    totalUsageMinutes: 51600,
+    activeUsageMinutes: 39700,
+    lastDetectedDate: '2026-05-26',
+    licenceRequirement: 'Editor seat subscription',
+    gdprRisk: false,
+    eolDate: null,
+    upgradePath: 'Enterprise for advanced admin',
+    downgradePath: 'Viewer for commenters',
+    tags: ['approved', 'design'],
+    owner: 'Iris Chen',
+    businessUnit: 'Product',
+    approved: true,
+    monthlyCost: 1395,
+    renewalDate: '2026-10-01',
+    riskRating: 'low'
+  },
+  {
+    id: 'app-canva',
+    name: 'Canva',
+    vendor: 'Canva',
+    category: 'Design',
+    type: 'SaaS',
+    version: 'Evergreen',
+    edition: 'Teams',
+    installCount: 19,
+    activeUsers: 10,
+    totalUsageMinutes: 4120,
+    activeUsageMinutes: 1790,
+    lastDetectedDate: '2026-05-20',
+    licenceRequirement: 'Named user subscription',
+    gdprRisk: false,
+    eolDate: null,
+    upgradePath: 'Enterprise brand controls',
+    downgradePath: 'Free for ad-hoc viewers',
+    tags: ['approved', 'brand'],
+    owner: 'Iris Chen',
+    businessUnit: 'Revenue',
+    approved: true,
+    monthlyCost: 285,
+    renewalDate: '2026-06-20',
+    riskRating: 'low'
+  },
+  {
+    id: 'app-copilot',
+    name: 'GitHub Copilot',
+    vendor: 'GitHub',
+    category: 'AI Development',
+    type: 'AI tool',
+    version: 'Business',
+    edition: 'Business',
+    installCount: 44,
+    activeUsers: 32,
+    totalUsageMinutes: 12680,
+    activeUsageMinutes: 9020,
+    lastDetectedDate: '2026-05-25',
+    licenceRequirement: 'Named user subscription',
+    gdprRisk: true,
+    eolDate: null,
+    upgradePath: 'Enterprise for policy controls',
+    downgradePath: 'Remove from inactive engineers',
+    tags: ['approved', 'ai', 'developer'],
+    owner: 'Ben Martin',
+    businessUnit: 'Product',
+    approved: true,
+    monthlyCost: 836,
+    renewalDate: '2026-09-18',
+    riskRating: 'medium'
+  },
+  {
+    id: 'app-winserver',
+    name: 'Windows Server',
+    vendor: 'Microsoft',
+    category: 'Operating System',
+    type: 'server',
+    version: '2012 R2',
+    edition: 'Datacenter',
+    installCount: 11,
+    activeUsers: 0,
+    totalUsageMinutes: 74400,
+    activeUsageMinutes: 74400,
+    lastDetectedDate: '2026-05-18',
+    licenceRequirement: 'Core-based server licensing',
+    gdprRisk: false,
+    eolDate: '2023-10-10',
+    upgradePath: 'Windows Server 2022',
+    downgradePath: 'Decommission idle legacy hosts',
+    tags: ['server', 'eol'],
+    owner: 'Ava Collins',
+    businessUnit: 'Technology',
+    approved: true,
+    monthlyCost: 1450,
+    renewalDate: '2026-12-01',
+    riskRating: 'critical'
+  },
+  {
+    id: 'app-sqlserver',
+    name: 'SQL Server',
+    vendor: 'Microsoft',
+    category: 'Database',
+    type: 'server',
+    version: '2016 SP3',
+    edition: 'Standard',
+    installCount: 14,
+    activeUsers: 0,
+    totalUsageMinutes: 89200,
+    activeUsageMinutes: 89200,
+    lastDetectedDate: '2026-05-18',
+    licenceRequirement: 'Core-based database licensing',
+    gdprRisk: true,
+    eolDate: '2026-07-14',
+    upgradePath: 'SQL Server 2022',
+    downgradePath: 'Consolidate low-utilization instances',
+    tags: ['server', 'database', 'review'],
+    owner: null,
+    businessUnit: 'Technology',
+    approved: true,
+    monthlyCost: 4780,
+    renewalDate: '2026-08-01',
+    riskRating: 'high'
+  },
+  {
+    id: 'app-notion',
+    name: 'Notion',
+    vendor: 'Notion Labs',
+    category: 'Knowledge Management',
+    type: 'browser app',
+    version: 'Evergreen',
+    edition: 'Plus',
+    installCount: 0,
+    activeUsers: 17,
+    totalUsageMinutes: 8420,
+    activeUsageMinutes: 5110,
+    lastDetectedDate: '2026-05-26',
+    licenceRequirement: 'Named user subscription',
+    gdprRisk: true,
+    eolDate: null,
+    upgradePath: 'Business for SSO and audit logs',
+    downgradePath: 'Free for personal drafts',
+    tags: ['shadow-saas', 'knowledge'],
+    owner: null,
+    businessUnit: 'Product',
+    approved: false,
+    monthlyCost: 170,
+    renewalDate: '2026-06-15',
+    riskRating: 'high'
+  }
+];
+
+export const devices: Device[] = [
+  {
+    id: 'dev-001',
+    hostname: 'BSAM-WIN-014',
+    os: 'Windows',
+    osVersion: '11 24H2',
+    user: 'Ava Collins',
+    department: 'IT Operations',
+    lastCheckIn: '2026-05-26T08:35:00+08:00',
+    cpuArchitecture: 'x64',
+    installedSoftware: ['Microsoft 365', 'Slack', 'Zoom', 'SQL Server Management Studio'],
+    runningProcesses: ['teams.exe', 'slack.exe', 'msedge.exe'],
+    browserSaasUsageEvents: ['admin.microsoft.com', 'slack.com', 'portal.azure.com'],
+    customAttributes: { registry_owner: 'IT', local_cost_center: 'CC-100', encryption: 'enabled' },
+    serialNumber: 'SN-BSAM-014',
+    assetTag: 'AT-10014',
+    location: 'Perth HQ',
+    warrantyDate: '2027-05-14',
+    lifecycleStatus: 'active',
+    costCentre: 'CC-100',
+    notes: 'Primary admin workstation'
+  },
+  {
+    id: 'dev-002',
+    hostname: 'BSAM-MAC-021',
+    os: 'macOS',
+    osVersion: '15.5',
+    user: 'Iris Chen',
+    department: 'Design',
+    lastCheckIn: '2026-05-26T09:15:00+08:00',
+    cpuArchitecture: 'arm64',
+    installedSoftware: ['Adobe Creative Cloud', 'Figma', 'Canva', 'Slack', 'Zoom'],
+    runningProcesses: ['Figma', 'Creative Cloud', 'Slack'],
+    browserSaasUsageEvents: ['figma.com', 'canva.com', 'notion.so'],
+    customAttributes: { file_metadata_team: 'Brand Studio', local_cost_center: 'CC-330', jamf_group: 'Design Macs' },
+    serialNumber: 'C02BSAM021',
+    assetTag: 'AT-33021',
+    location: 'Melbourne Studio',
+    warrantyDate: '2026-11-30',
+    lifecycleStatus: 'active',
+    costCentre: 'CC-330',
+    notes: 'High-memory creative device'
+  },
+  {
+    id: 'dev-003',
+    hostname: 'BSAM-WIN-044',
+    os: 'Windows',
+    osVersion: '11 23H2',
+    user: 'Ben Martin',
+    department: 'Engineering',
+    lastCheckIn: '2026-05-25T17:28:00+08:00',
+    cpuArchitecture: 'x64',
+    installedSoftware: ['Microsoft 365', 'Jira', 'GitHub Copilot', 'AutoCAD', 'Slack'],
+    runningProcesses: ['code.exe', 'acad.exe', 'copilot-agent.exe'],
+    browserSaasUsageEvents: ['github.com', 'jira.demo.local', 'slack.com'],
+    customAttributes: { registry_role: 'engineering', local_cost_center: 'CC-210', gpu: 'RTX A2000' },
+    serialNumber: 'SN-BSAM-044',
+    assetTag: 'AT-21044',
+    location: 'Perth HQ',
+    warrantyDate: '2026-08-18',
+    lifecycleStatus: 'refresh due',
+    costCentre: 'CC-210',
+    notes: 'Refresh candidate due to warranty window'
+  },
+  {
+    id: 'dev-004',
+    hostname: 'BSAM-SRV-007',
+    os: 'Windows Server',
+    osVersion: '2012 R2',
+    user: 'Service Account',
+    department: 'IT Operations',
+    lastCheckIn: '2026-05-18T02:00:00+08:00',
+    cpuArchitecture: 'x64',
+    installedSoftware: ['Windows Server', 'SQL Server'],
+    runningProcesses: ['sqlservr.exe', 'w3wp.exe'],
+    browserSaasUsageEvents: [],
+    customAttributes: { registry_owner: 'Legacy Apps', local_cost_center: 'CC-110', backup_policy: 'weekly' },
+    serialNumber: 'VM-BSAM-007',
+    assetTag: 'AT-11007',
+    location: 'Azure Australia East',
+    warrantyDate: '2026-12-31',
+    lifecycleStatus: 'refresh due',
+    costCentre: 'CC-110',
+    notes: 'Legacy database host with EOL operating system'
+  },
+  {
+    id: 'dev-005',
+    hostname: 'BSAM-MAC-036',
+    os: 'macOS',
+    osVersion: '14.7',
+    user: 'Sofia Walsh',
+    department: 'Finance',
+    lastCheckIn: '2026-05-25T14:04:00+08:00',
+    cpuArchitecture: 'arm64',
+    installedSoftware: ['Microsoft 365', 'Zoom', 'Slack'],
+    runningProcesses: ['Excel', 'Zoom', 'Safari'],
+    browserSaasUsageEvents: ['app.powerbi.com', 'notion.so', 'zoom.us'],
+    customAttributes: { file_metadata_team: 'Finance', local_cost_center: 'CC-410', mdm_state: 'compliant' },
+    serialNumber: 'C02BSAM036',
+    assetTag: 'AT-41036',
+    location: 'Sydney Office',
+    warrantyDate: '2027-02-09',
+    lifecycleStatus: 'active',
+    costCentre: 'CC-410',
+    notes: 'Finance analyst laptop'
+  }
+];
+
+export const usageEvents: UsageEvent[] = [
+  { id: 'use-001', appId: 'app-m365', appName: 'Microsoft 365', userId: 'usr-001', userName: 'Ava Collins', deviceId: 'dev-001', eventType: 'process_open', startedAt: '2026-05-24T08:30:00+08:00', endedAt: '2026-05-24T16:20:00+08:00', activeMinutes: 286, totalMinutes: 470, source: 'agent' },
+  { id: 'use-002', appId: 'app-adobe', appName: 'Adobe Creative Cloud', userId: 'usr-005', userName: 'Iris Chen', deviceId: 'dev-002', eventType: 'process_open', startedAt: '2026-05-24T10:10:00+08:00', endedAt: '2026-05-24T15:05:00+08:00', activeMinutes: 211, totalMinutes: 295, source: 'agent' },
+  { id: 'use-003', appId: 'app-autocad', appName: 'AutoCAD', userId: 'usr-006', userName: 'Ben Martin', deviceId: 'dev-003', eventType: 'process_open', startedAt: '2026-05-22T09:00:00+08:00', endedAt: '2026-05-22T17:10:00+08:00', activeMinutes: 88, totalMinutes: 490, source: 'agent' },
+  { id: 'use-004', appId: 'app-slack', appName: 'Slack', userId: 'usr-007', userName: 'Sofia Walsh', deviceId: 'dev-005', eventType: 'browser_url', startedAt: '2026-05-25T08:40:00+08:00', endedAt: '2026-05-25T16:20:00+08:00', activeMinutes: 112, totalMinutes: 460, source: 'integration' },
+  { id: 'use-005', appId: 'app-notion', appName: 'Notion', userId: 'usr-005', userName: 'Iris Chen', deviceId: 'dev-002', eventType: 'browser_url', startedAt: '2026-05-25T11:10:00+08:00', endedAt: '2026-05-25T12:00:00+08:00', activeMinutes: 34, totalMinutes: 50, source: 'agent' },
+  { id: 'use-006', appId: 'app-copilot', appName: 'GitHub Copilot', userId: 'usr-006', userName: 'Ben Martin', deviceId: 'dev-003', eventType: 'process_open', startedAt: '2026-05-26T08:15:00+08:00', endedAt: '2026-05-26T16:45:00+08:00', activeMinutes: 132, totalMinutes: 510, source: 'agent' },
+  { id: 'use-007', appId: 'app-zoom', appName: 'Zoom', userId: 'usr-002', userName: 'Marcus Tan', deviceId: 'dev-001', eventType: 'sso_assignment', startedAt: '2026-05-23T13:00:00+08:00', endedAt: '2026-05-23T13:50:00+08:00', activeMinutes: 45, totalMinutes: 50, source: 'integration' },
+  { id: 'use-008', appId: 'app-canva', appName: 'Canva', userId: 'usr-005', userName: 'Iris Chen', deviceId: 'dev-002', eventType: 'browser_url', startedAt: '2026-05-20T14:00:00+08:00', endedAt: '2026-05-20T15:10:00+08:00', activeMinutes: 18, totalMinutes: 70, source: 'agent' }
+];
+
+export const saasDetections: SaaSDetection[] = [
+  { id: 'saas-001', saasAppName: 'Microsoft 365', domain: 'office.com', vendor: 'Microsoft', category: 'Productivity', detectedUsers: 132, assignedUsers: 142, paidSeats: 150, activeUsers: 126, inactiveUsers: 24, monthlyCost: 7052, riskRating: 'medium', renewalDate: '2026-08-18', approved: true, source: 'SSO import' },
+  { id: 'saas-002', saasAppName: 'Slack', domain: 'slack.com', vendor: 'Salesforce', category: 'Collaboration', detectedUsers: 94, assignedUsers: 108, paidSeats: 110, activeUsers: 91, inactiveUsers: 19, monthlyCost: 1832, riskRating: 'medium', renewalDate: '2026-09-05', approved: true, source: 'SSO import' },
+  { id: 'saas-003', saasAppName: 'Notion', domain: 'notion.so', vendor: 'Notion Labs', category: 'Knowledge Management', detectedUsers: 17, assignedUsers: 0, paidSeats: 17, activeUsers: 17, inactiveUsers: 0, monthlyCost: 170, riskRating: 'high', renewalDate: '2026-06-15', approved: false, source: 'browser import' },
+  { id: 'saas-004', saasAppName: 'Figma', domain: 'figma.com', vendor: 'Figma', category: 'Design', detectedUsers: 29, assignedUsers: 31, paidSeats: 35, activeUsers: 27, inactiveUsers: 8, monthlyCost: 1395, riskRating: 'low', renewalDate: '2026-10-01', approved: true, source: 'finance CSV' },
+  { id: 'saas-005', saasAppName: 'Canva', domain: 'canva.com', vendor: 'Canva', category: 'Design', detectedUsers: 18, assignedUsers: 22, paidSeats: 25, activeUsers: 10, inactiveUsers: 15, monthlyCost: 285, riskRating: 'low', renewalDate: '2026-06-20', approved: true, source: 'manual' },
+  { id: 'saas-006', saasAppName: 'Miro Liteboard', domain: 'liteboard.example', vendor: 'Miro Liteboard', category: 'Whiteboarding', detectedUsers: 9, assignedUsers: 0, paidSeats: 0, activeUsers: 9, inactiveUsers: 0, monthlyCost: 0, riskRating: 'medium', renewalDate: '2026-08-01', approved: false, source: 'browser import' }
+];
+
+export const licences: LicenceEntitlement[] = [
+  { id: 'lic-001', applicationId: 'app-m365', applicationName: 'Microsoft 365', contractName: 'Microsoft Enterprise Renewal 2026', vendor: 'Microsoft', sku: 'M365-E5', licenceMetric: 'user', purchasedQuantity: 150, assignedQuantity: 142, consumedQuantity: 126, complianceStatus: 'over-licensed', renewalDate: '2026-08-18', contractOwner: 'Priya Singh', costPerLicence: 47.01, trueUpTrueDownNotes: 'Review inactive E5 seats before August renewal.', rule: 'Consumed = active assigned users in last 45 days.' },
+  { id: 'lic-002', applicationId: 'app-adobe', applicationName: 'Adobe Creative Cloud', contractName: 'Creative Suite Team Plan', vendor: 'Adobe', sku: 'CC-ALL-APPS', licenceMetric: 'user', purchasedQuantity: 45, assignedQuantity: 42, consumedQuantity: 21, complianceStatus: 'over-licensed', renewalDate: '2026-07-12', contractOwner: 'Iris Chen', costPerLicence: 60, trueUpTrueDownNotes: 'Move 14 users to single-app plans.', rule: 'Consumed = users with 60+ active minutes in 30 days.' },
+  { id: 'lic-003', applicationId: 'app-autocad', applicationName: 'AutoCAD', contractName: 'Autodesk Engineering Seats', vendor: 'Autodesk', sku: 'ACAD-COM', licenceMetric: 'user', purchasedQuantity: 12, assignedQuantity: 18, consumedQuantity: 8, complianceStatus: 'under-licensed', renewalDate: '2026-06-30', contractOwner: 'Ben Martin', costPerLicence: 169, trueUpTrueDownNotes: 'Assignments exceed purchased count; validate named-user roster.', rule: 'Assigned named users cannot exceed purchased entitlement.' },
+  { id: 'lic-004', applicationId: 'app-sqlserver', applicationName: 'SQL Server', contractName: 'Database Core Licence Pool', vendor: 'Microsoft', sku: 'SQL-STD-CORE', licenceMetric: 'core', purchasedQuantity: 64, assignedQuantity: 72, consumedQuantity: 72, complianceStatus: 'under-licensed', renewalDate: '2026-08-01', contractOwner: 'Priya Singh', costPerLicence: 74.69, trueUpTrueDownNotes: 'Legacy hosts need consolidation or true-up.', rule: 'Consumed = active server cores with SQL service running.' },
+  { id: 'lic-005', applicationId: 'app-copilot', applicationName: 'GitHub Copilot', contractName: 'Developer AI Add-ons', vendor: 'GitHub', sku: 'COPILOT-BIZ', licenceMetric: 'subscription', purchasedQuantity: 44, assignedQuantity: 44, consumedQuantity: 32, complianceStatus: 'over-licensed', renewalDate: '2026-09-18', contractOwner: 'Ben Martin', costPerLicence: 19, trueUpTrueDownNotes: 'Remove add-on from inactive repos contributors.', rule: 'Consumed = active IDE usage or suggestion acceptance in 30 days.' }
+];
+
+export const costRecords: CostRecord[] = [
+  { id: 'cost-001', applicationName: 'Microsoft 365', vendor: 'Microsoft', department: 'Finance', businessUnit: 'Corporate', userName: 'Sofia Walsh', deviceName: 'BSAM-MAC-036', monthlyCost: 47.01, allocationMethod: 'seat', negotiatedPrice: 47.01 },
+  { id: 'cost-002', applicationName: 'Adobe Creative Cloud', vendor: 'Adobe', department: 'Design', businessUnit: 'Product', userName: 'Iris Chen', deviceName: 'BSAM-MAC-021', monthlyCost: 60, allocationMethod: 'seat', negotiatedPrice: 52 },
+  { id: 'cost-003', applicationName: 'AutoCAD', vendor: 'Autodesk', department: 'Engineering', businessUnit: 'Product', userName: 'Ben Martin', deviceName: 'BSAM-WIN-044', monthlyCost: 169, allocationMethod: 'seat', negotiatedPrice: null },
+  { id: 'cost-004', applicationName: 'Slack', vendor: 'Salesforce', department: 'Sales', businessUnit: 'Revenue', userName: 'Team Allocation', deviceName: 'n/a', monthlyCost: 1832, allocationMethod: 'usage', negotiatedPrice: 16.65 },
+  { id: 'cost-005', applicationName: 'SQL Server', vendor: 'Microsoft', department: 'IT Operations', businessUnit: 'Technology', userName: 'Service Account', deviceName: 'BSAM-SRV-007', monthlyCost: 4780, allocationMethod: 'device', negotiatedPrice: 4300 }
+];
+
+export const savingsRecommendations: SavingsRecommendation[] = [
+  { id: 'sav-001', type: 'cancel unused', applicationName: 'Adobe Creative Cloud', department: 'Design', estimatedAnnualSavings: 10080, reason: '14 assigned users have under 30 active minutes in the last 30 days.', status: 'reviewing' },
+  { id: 'sav-002', type: 'downgrade', applicationName: 'Microsoft 365', department: 'Finance', estimatedAnnualSavings: 6840, reason: 'Twelve E5 users use no advanced compliance or voice features.', status: 'new' },
+  { id: 'sav-003', type: 'renewal prep', applicationName: 'AutoCAD', department: 'Engineering', estimatedAnnualSavings: 4056, reason: 'Five viewers can move to free viewer tooling before the June renewal.', status: 'new' },
+  { id: 'sav-004', type: 'consolidate vendors', applicationName: 'Zoom', department: 'Corporate', estimatedAnnualSavings: 7920, reason: 'Meeting overlap with Microsoft Teams exceeds 70 percent for low host users.', status: 'reviewing' }
+];
+
+export const complianceResults: ComplianceResult[] = [
+  { id: 'cmp-001', finding: 'AutoCAD assigned users exceed purchased entitlement', applicationName: 'AutoCAD', category: 'under-licensed', severity: 'high', riskScore: 82, owner: 'Ben Martin', evidence: '18 assigned users vs 12 purchased seats.', dueDate: '2026-06-15' },
+  { id: 'cmp-002', finding: 'Windows Server 2012 R2 remains in production', applicationName: 'Windows Server', category: 'EOL', severity: 'critical', riskScore: 96, owner: 'Ava Collins', evidence: '11 installations detected after vendor support end date.', dueDate: '2026-06-05' },
+  { id: 'cmp-003', finding: 'Notion is used without application approval', applicationName: 'Notion', category: 'unapproved SaaS', severity: 'high', riskScore: 78, owner: null, evidence: '17 active browser users, no approved application owner.', dueDate: '2026-06-10' },
+  { id: 'cmp-004', finding: 'SQL Server has no named owner', applicationName: 'SQL Server', category: 'missing owner', severity: 'medium', riskScore: 61, owner: null, evidence: 'Owner field is blank for a high-cost database platform.', dueDate: '2026-06-21' },
+  { id: 'cmp-005', finding: 'Finance laptop on prior macOS release', applicationName: 'Device estate', category: 'old device version', severity: 'medium', riskScore: 52, owner: 'Noah Rivera', evidence: 'BSAM-MAC-036 on macOS 14.7 while policy target is 15.x.', dueDate: '2026-07-01' }
+];
+
+export const integrations: Integration[] = [
+  {
+    id: 'int-entra',
+    name: 'Microsoft Entra ID / Azure AD',
+    category: 'identity',
+    connectionStatus: 'connected',
+    enabled: true,
+    lastSync: '2026-05-26T06:10:00+08:00',
+    syncLogs: [{ at: '2026-05-26T06:10:00+08:00', status: 'success', message: 'Imported 151 users and 28 app assignments.' }],
+    mapping: [
+      { source: 'userPrincipalName', target: 'users_profile.email' },
+      { source: 'assignedApp.displayName', target: 'saas_detections.saas_app_name' }
+    ]
+  },
+  {
+    id: 'int-m365',
+    name: 'Microsoft 365 licence assignments',
+    category: 'identity',
+    connectionStatus: 'connected',
+    enabled: true,
+    lastSync: '2026-05-26T06:22:00+08:00',
+    syncLogs: [{ at: '2026-05-26T06:22:00+08:00', status: 'warning', message: '12 inactive E5 users flagged.' }],
+    mapping: [
+      { source: 'skuPartNumber', target: 'licence_entitlements.sku' },
+      { source: 'assignedLicenses', target: 'licence_assignments.assignment_source' }
+    ]
+  },
+  {
+    id: 'int-google',
+    name: 'Google Workspace',
+    category: 'identity',
+    connectionStatus: 'not connected',
+    enabled: false,
+    lastSync: null,
+    syncLogs: [],
+    mapping: [{ source: 'primaryEmail', target: 'users_profile.email' }]
+  },
+  {
+    id: 'int-okta',
+    name: 'Okta',
+    category: 'identity',
+    connectionStatus: 'needs attention',
+    enabled: true,
+    lastSync: '2026-05-24T21:15:00+08:00',
+    syncLogs: [{ at: '2026-05-24T21:15:00+08:00', status: 'failed', message: 'Token expired before app import completed.' }],
+    mapping: [{ source: 'app.label', target: 'applications.name' }]
+  },
+  {
+    id: 'int-servicenow',
+    name: 'ServiceNow CMDB',
+    category: 'service management',
+    connectionStatus: 'connected',
+    enabled: true,
+    lastSync: '2026-05-25T04:00:00+08:00',
+    syncLogs: [{ at: '2026-05-25T04:00:00+08:00', status: 'success', message: 'Exported 89 application CIs.' }],
+    mapping: [{ source: 'applications.name', target: 'cmdb_ci_appl.name', transform: 'trim' }]
+  },
+  {
+    id: 'int-jira-assets',
+    name: 'Jira Assets',
+    category: 'service management',
+    connectionStatus: 'not connected',
+    enabled: false,
+    lastSync: null,
+    syncLogs: [],
+    mapping: [{ source: 'devices.assetTag', target: 'object.assetTag' }]
+  },
+  {
+    id: 'int-intune',
+    name: 'Intune',
+    category: 'endpoint',
+    connectionStatus: 'connected',
+    enabled: true,
+    lastSync: '2026-05-26T05:35:00+08:00',
+    syncLogs: [{ at: '2026-05-26T05:35:00+08:00', status: 'success', message: 'Imported 118 managed devices.' }],
+    mapping: [{ source: 'deviceName', target: 'devices.hostname' }]
+  },
+  {
+    id: 'int-jamf',
+    name: 'Jamf',
+    category: 'endpoint',
+    connectionStatus: 'connected',
+    enabled: true,
+    lastSync: '2026-05-26T05:45:00+08:00',
+    syncLogs: [{ at: '2026-05-26T05:45:00+08:00', status: 'success', message: 'Imported 36 macOS devices.' }],
+    mapping: [{ source: 'extensionAttributes.costCenter', target: 'devices.cost_centre' }]
+  },
+  {
+    id: 'int-sccm',
+    name: 'SCCM',
+    category: 'endpoint',
+    connectionStatus: 'needs attention',
+    enabled: true,
+    lastSync: '2026-05-22T02:15:00+08:00',
+    syncLogs: [{ at: '2026-05-22T02:15:00+08:00', status: 'warning', message: 'Delta inventory older than 72 hours.' }],
+    mapping: [{ source: 'ARPDisplayName', target: 'raw_inventory_events.raw_name' }]
+  },
+  {
+    id: 'int-finance-csv',
+    name: 'Finance/procurement CSV',
+    category: 'finance',
+    connectionStatus: 'connected',
+    enabled: true,
+    lastSync: '2026-05-25T17:00:00+08:00',
+    syncLogs: [{ at: '2026-05-25T17:00:00+08:00', status: 'success', message: 'Imported 212 invoice lines.' }],
+    mapping: [{ source: 'supplier_name', target: 'vendors.name' }]
+  },
+  {
+    id: 'int-rest',
+    name: 'Custom REST API',
+    category: 'api',
+    connectionStatus: 'not connected',
+    enabled: false,
+    lastSync: null,
+    syncLogs: [],
+    mapping: [{ source: 'payload.software[].name', target: 'raw_inventory_events.raw_name' }]
+  }
+];
+
+export const exportWorkflows: ExportWorkflow[] = [
+  {
+    id: 'flow-001',
+    name: 'Approved apps to CMDB',
+    sourceDataset: 'applications',
+    filters: 'approved = true and owner is not null',
+    mappedFields: [
+      { source: 'name', destination: 'cmdb_ci_appl.name' },
+      { source: 'owner', destination: 'owned_by' },
+      { source: 'businessUnit', destination: 'business_unit' }
+    ],
+    destination: 'ServiceNow mock endpoint',
+    schedule: 'daily',
+    enabled: true,
+    executionLogs: [{ at: '2026-05-26T03:00:00+08:00', status: 'success', records: 10, message: 'CMDB payload accepted.' }]
+  },
+  {
+    id: 'flow-002',
+    name: 'Renewal report to Finance CSV',
+    sourceDataset: 'licences',
+    filters: 'renewalDate <= today + 90 days',
+    mappedFields: [
+      { source: 'applicationName', destination: 'Application' },
+      { source: 'renewalDate', destination: 'Renewal date' },
+      { source: 'costPerLicence', destination: 'Unit cost' }
+    ],
+    destination: 'CSV',
+    schedule: 'weekly',
+    enabled: true,
+    executionLogs: [{ at: '2026-05-25T07:00:00+08:00', status: 'success', records: 4, message: 'CSV generated for finance.' }]
+  }
+];
+
+export const customInventoryRules: CustomInventoryRule[] = [
+  { id: 'rule-001', name: 'AutoCAD executable', matchType: 'executable', matchValue: 'acad.exe', normalizedApplication: 'AutoCAD', edition: 'Commercial', classification: 'paid', confidence: 98, enabled: true },
+  { id: 'rule-002', name: 'Adobe CC folder', matchType: 'folder path', matchValue: '/Applications/Adobe Creative Cloud', normalizedApplication: 'Adobe Creative Cloud', edition: 'All Apps', classification: 'enterprise', confidence: 93, enabled: true },
+  { id: 'rule-003', name: 'Notion SaaS domain', matchType: 'SaaS domain', matchValue: 'notion.so', normalizedApplication: 'Notion', edition: 'Plus', classification: 'paid', confidence: 86, enabled: true },
+  { id: 'rule-004', name: 'SQL service process', matchType: 'process name', matchValue: 'sqlservr.exe', normalizedApplication: 'SQL Server', edition: 'Standard', classification: 'enterprise', confidence: 91, enabled: true },
+  { id: 'rule-005', name: 'GitHub Copilot agent', matchType: 'process name', matchValue: 'copilot-agent.exe', normalizedApplication: 'GitHub Copilot', edition: 'Business', classification: 'paid', confidence: 88, enabled: true }
+];
+
+export const normalizationReviewQueue: NormalizationReview[] = [
+  { id: 'norm-001', rawName: 'MS Office 365 Apps', suggestedApplication: 'Microsoft 365', vendorSuggestion: 'Microsoft', confidenceScore: 92, duplicateCandidates: ['Microsoft Office', 'Office 365 ProPlus'], status: 'pending', analyst: null, overrideHistory: [] },
+  { id: 'norm-002', rawName: 'AdobeCC All', suggestedApplication: 'Adobe Creative Cloud', vendorSuggestion: 'Adobe', confidenceScore: 85, duplicateCandidates: ['Adobe Creative Suite', 'Adobe CC'], status: 'pending', analyst: null, overrideHistory: ['2026-05-19: mapped from Adobe Suite by Priya Singh'] },
+  { id: 'norm-003', rawName: 'sql std 13.x', suggestedApplication: 'SQL Server', vendorSuggestion: 'Microsoft', confidenceScore: 76, duplicateCandidates: ['Microsoft SQL Server Standard'], status: 'overridden', analyst: 'Priya Singh', overrideHistory: ['2026-05-18: forced edition Standard after registry key match'] },
+  { id: 'norm-004', rawName: 'figma_web_app', suggestedApplication: 'Figma', vendorSuggestion: 'Figma', confidenceScore: 89, duplicateCandidates: ['Figma Web'], status: 'approved', analyst: 'Ava Collins', overrideHistory: [] }
+];
+
+export const reports: ReportDefinition[] = [
+  { id: 'rpt-001', name: 'Software inventory report', description: 'Normalized applications with install, owner, version, EOL, and risk fields.', dataset: 'applications', filters: ['type', 'vendor', 'owner', 'business unit', 'tags'], exportFormats: ['CSV', 'JSON'], savedConfigurations: 3 },
+  { id: 'rpt-002', name: 'SaaS usage report', description: 'Detected SaaS domains, assigned users, active users, inactive seats, and approvals.', dataset: 'saas_detections', filters: ['approved', 'risk rating', 'renewal window'], exportFormats: ['CSV', 'JSON'], savedConfigurations: 2 },
+  { id: 'rpt-003', name: 'Licence compliance report', description: 'Entitlements, assignments, consumption, and compliance status.', dataset: 'licence_entitlements', filters: ['vendor', 'metric', 'status', 'renewal date'], exportFormats: ['CSV', 'JSON'], savedConfigurations: 4 },
+  { id: 'rpt-004', name: 'Cost optimisation report', description: 'Savings, downgrade, cancellation, and renewal preparation recommendations.', dataset: 'savings_recommendations', filters: ['department', 'status', 'saving threshold'], exportFormats: ['CSV', 'JSON'], savedConfigurations: 5 },
+  { id: 'rpt-005', name: 'Renewal report', description: 'Upcoming vendor and SKU renewals with owners and cost impact.', dataset: 'licences', filters: ['next 30/60/90 days', 'owner', 'vendor'], exportFormats: ['CSV', 'JSON'], savedConfigurations: 2 },
+  { id: 'rpt-006', name: 'Shadow IT report', description: 'Apps used but not approved, including domain and user evidence.', dataset: 'saas_detections', filters: ['approved=false', 'risk rating', 'detected users'], exportFormats: ['CSV', 'JSON'], savedConfigurations: 2 },
+  { id: 'rpt-007', name: 'EOL software report', description: 'Software past or near end-of-life with devices and mitigation path.', dataset: 'applications', filters: ['EOL date', 'owner', 'severity'], exportFormats: ['CSV', 'JSON'], savedConfigurations: 1 },
+  { id: 'rpt-008', name: 'User software profile', description: 'Assigned, installed, and actively used applications by user.', dataset: 'usage_events', filters: ['user', 'department', 'active minutes'], exportFormats: ['CSV', 'JSON'], savedConfigurations: 3 },
+  { id: 'rpt-009', name: 'Device software profile', description: 'Device inventory with installed software, running processes, and custom attributes.', dataset: 'devices', filters: ['device', 'department', 'OS', 'last seen'], exportFormats: ['CSV', 'JSON'], savedConfigurations: 2 },
+  { id: 'rpt-010', name: 'Department cost report', description: 'Monthly and annualized software cost allocations by department and business unit.', dataset: 'cost_records', filters: ['department', 'business unit', 'vendor'], exportFormats: ['CSV', 'JSON'], savedConfigurations: 4 }
+];
+
+export const auditLog = [
+  { id: 'aud-001', actor: 'Ava Collins', action: 'approved_application', entity: 'Figma', at: '2026-05-20T09:42:00+08:00' },
+  { id: 'aud-002', actor: 'Priya Singh', action: 'updated_licence_rule', entity: 'SQL Server', at: '2026-05-21T14:22:00+08:00' },
+  { id: 'aud-003', actor: 'Marcus Tan', action: 'created_export_workflow', entity: 'Renewal report to Finance CSV', at: '2026-05-22T10:03:00+08:00' }
+];

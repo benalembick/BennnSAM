@@ -1,0 +1,21 @@
+{
+  "name": "bennnsam",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BennnSam Software Asset Management and SaaS Management MVP",
+  "workspaces": [
+    "apps/web",
+    "apps/api"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace @bennnsam/api\" \"npm run dev --workspace @bennnsam/web\"",
+    "dev:web": "npm run dev --workspace @bennnsam/web",
+    "dev:api": "npm run dev --workspace @bennnsam/api",
+    "build": "npm run build --workspace @bennnsam/api && npm run build --workspace @bennnsam/web",
+    "typecheck": "npm run typecheck --workspace @bennnsam/api && npm run typecheck --workspace @bennnsam/web",
+    "lint": "npm run lint --workspace @bennnsam/web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
