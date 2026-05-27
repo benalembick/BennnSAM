@@ -1,3 +1,6 @@
+import { existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -28,6 +31,9 @@ dotenv.config();
 
 const app = express();
 const port = Number(process.env.PORT ?? process.env.API_PORT ?? 4100);
+const currentDir = dirname(fileURLToPath(import.meta.url));
+const webDistPath = resolve(currentDir, '../../web/dist');
+const webIndexPath = join(webDistPath, 'index.html');
 
 app.use(
   cors({
@@ -308,6 +314,22 @@ app.post('/api/assistant/query', (req, res) => {
   if (!prompt.trim()) return res.status(400).json({ error: 'Prompt is required' });
   res.json(runAssistantQuery(prompt));
 });
+
+if (existsSync(webIndexPath)) {
+  app.use(express.static(webDistPath));
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(webIndexPath);
+  });
+} else {
+  app.get('/', (_req, res) => {
+    res.json({
+      ok: true,
+      name: 'BennnSam API',
+      message: 'Build the web app with npm run build to serve the dashboard from this Node application.'
+    });
+  });
+}
 
 function aggregateCost(field: keyof (typeof costRecords)[number]) {
   return Object.values(

@@ -161,22 +161,27 @@ npm ci
 npm run build
 ```
 
-Upload or copy the built frontend files from:
+For a single-domain cPanel Node.js deployment, use these Node app settings:
 
 ```text
-apps/web/dist/
+Node.js version: 20.24.1
+Application mode: Production
+Application root: /home/YOUR_CPANEL_USER/bennnsam.donkeybillabong.com/apps/api
+Application URL: bennnsam.donkeybillabong.com
+Application startup file: dist/index.js
 ```
 
-to:
+In this setup, Express serves both:
 
 ```text
-public_html/
+https://bennnsam.donkeybillabong.com/
+https://bennnsam.donkeybillabong.com/api/health
 ```
 
-For the API, create a cPanel Node.js app that points to the API package and starts:
+The built frontend must exist at:
 
 ```text
-apps/api/dist/index.js
+/home/YOUR_CPANEL_USER/bennnsam.donkeybillabong.com/apps/web/dist/
 ```
 
 Set these environment variables in cPanel:
@@ -188,6 +193,8 @@ CORS_ORIGIN=https://yourdomain.com
 
 cPanel usually provides `PORT` automatically. BennnSam also supports `API_PORT` for local development.
 
+Because the frontend and API are on the same domain in this setup, you do not need `VITE_API_URL`; the web app defaults to `/api`.
+
 If the frontend calls an API on another domain or subdomain, set this before building the web app:
 
 ```env
@@ -195,3 +202,8 @@ VITE_API_URL=https://api.yourdomain.com/api
 ```
 
 Then rebuild and upload `apps/web/dist` again.
+
+If the dashboard shows a LiteSpeed or cPanel `404 Not Found` message inside the app, the frontend is running but `/api` is not reaching the Node API. Fix one of these:
+
+- Mount the cPanel Node.js app so `https://yourdomain.com/api/health` returns JSON.
+- Or host the API on a subdomain, for example `https://api.yourdomain.com/api`, set `VITE_API_URL` to that URL, rebuild the web app, and upload the new `apps/web/dist` files.
