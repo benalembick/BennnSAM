@@ -27,7 +27,7 @@ import { runAssistantQuery } from './reportEngine.js';
 dotenv.config();
 
 const app = express();
-const port = Number(process.env.API_PORT ?? 4100);
+const port = Number(process.env.PORT ?? process.env.API_PORT ?? 4100);
 
 app.use(
   cors({

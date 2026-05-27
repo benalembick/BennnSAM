@@ -149,3 +149,49 @@ npm run dev:web    # web only
 npm run build      # TypeScript and production build
 npm run typecheck  # TypeScript checks
 ```
+
+## cPanel Deployment
+
+cPanel's Git Version Control button can time out after a few seconds on `git pull`. If that happens, use cPanel Terminal instead.
+
+```bash
+cd /home/YOUR_CPANEL_USER/path/to/BennnSAM
+git pull --ff-only origin main
+npm ci
+npm run build
+```
+
+Upload or copy the built frontend files from:
+
+```text
+apps/web/dist/
+```
+
+to:
+
+```text
+public_html/
+```
+
+For the API, create a cPanel Node.js app that points to the API package and starts:
+
+```text
+apps/api/dist/index.js
+```
+
+Set these environment variables in cPanel:
+
+```env
+NODE_ENV=production
+CORS_ORIGIN=https://yourdomain.com
+```
+
+cPanel usually provides `PORT` automatically. BennnSam also supports `API_PORT` for local development.
+
+If the frontend calls an API on another domain or subdomain, set this before building the web app:
+
+```env
+VITE_API_URL=https://api.yourdomain.com/api
+```
+
+Then rebuild and upload `apps/web/dist` again.
