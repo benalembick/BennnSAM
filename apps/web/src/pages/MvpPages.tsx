@@ -10,7 +10,6 @@ import {
   FileInput,
   FileText,
   Gauge,
-  HardDrive,
   KeyRound,
   LibraryBig,
   PackageSearch,
@@ -30,6 +29,7 @@ import { Drawer } from '../components/Drawer';
 import { ErrorState, LoadingState } from '../components/LoadingState';
 import { MetricCard } from '../components/MetricCard';
 import { StatusBadge } from '../components/StatusBadge';
+import { Button, ChartCard, InsightCard, PageHeader, cardSurface } from '../components/ui';
 import { apiGet, apiPost } from '../lib/api';
 import { downloadCsv, readCsv } from '../lib/csv';
 import { currency, date, number, titleCase } from '../lib/format';
@@ -122,9 +122,9 @@ function useData<T>(path: string) {
 
 function Panel({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <section className={`${cardSurface} rounded-lg p-4`}>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-base font-semibold text-ink">{title}</h2>
+        <h2 className="text-sm font-semibold text-slate-950">{title}</h2>
         {action}
       </div>
       {children}
@@ -134,9 +134,9 @@ function Panel({ title, children, action }: { title: string; children: React.Rea
 
 function MiniStat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="text-sm text-slate-500">{label}</div>
-      <div className="mt-1 text-xl font-semibold text-ink">{value}</div>
+    <div className={`${cardSurface} rounded-lg p-3.5`}>
+      <div className="text-xs font-semibold text-slate-500">{label}</div>
+      <div className="mt-1 font-mono text-lg font-semibold tracking-tight text-slate-950">{value}</div>
     </div>
   );
 }
@@ -152,25 +152,69 @@ export function DashboardPage({ globalSearch }: { globalSearch: string }) {
   if (loading) return <LoadingState label="Loading dashboard" />;
   if (error || !data) return <ErrorState message={error ?? 'Dashboard unavailable'} />;
 
+  const totalSpend = data.spendByVendor.reduce((sum, item) => sum + item.spend, 0);
+  const topVendor = [...data.spendByVendor].sort((a, b) => b.spend - a.spend)[0];
+  const topVendorShare = topVendor && totalSpend ? Math.round((topVendor.spend / totalSpend) * 100) : 0;
+  const totalUsage = data.usageByCategory.reduce((sum, item) => sum + item.total, 0);
+  const activeUsage = data.usageByCategory.reduce((sum, item) => sum + item.active, 0);
+  const activeUsageShare = totalUsage ? Math.round((activeUsage / totalUsage) * 100) : 0;
+  const renewalExposure = data.renewalTimeline.filter((item) => item.days <= 90).reduce((sum, item) => sum + item.annualValue, 0);
+  const healthScore = Math.max(
+    72,
+    Math.min(98, 96 - (data.cards.complianceRiskCount ?? 0) * 2 - Math.ceil((data.cards.shadowSaasDetections ?? 0) / 2))
+  );
   const cardConfig = [
-    ['totalSoftwareApplications', 'Total software applications', PackageSearch, '#inventory'],
+    ['totalSoftwareApplications', 'Total applications', PackageSearch, '#inventory'],
     ['saasApplications', 'SaaS applications', LibraryBig, '#saas'],
-    ['onPremApplications', 'On-prem applications', HardDrive, '#inventory'],
-    ['totalDevices', 'Total devices', Cpu, '#devices'],
-    ['totalUsers', 'Total users', Users, '#admin'],
-    ['monthlySoftwareSpend', 'Monthly software spend', CircleDollarSign, '#costs'],
+    ['totalDevices', 'Devices', Cpu, '#devices'],
+    ['totalUsers', 'Users', Users, '#admin'],
+    ['monthlySoftwareSpend', 'Monthly spend', CircleDollarSign, '#costs'],
     ['potentialSavings', 'Potential savings', Sparkles, '#costs'],
     ['underusedLicences', 'Underused licences', Gauge, '#usage'],
-    ['complianceRiskCount', 'Compliance risk count', ShieldAlert, '#compliance'],
+    ['complianceRiskCount', 'Compliance risks', ShieldAlert, '#compliance'],
     ['upcomingRenewals', 'Upcoming renewals', KeyRound, '#licences'],
-    ['shadowSaasDetections', 'Shadow SaaS detections', AlertTriangle, '#saas']
+    ['shadowSaasDetections', 'Shadow SaaS', AlertTriangle, '#saas']
   ] as const;
 
   const filteredRenewals = filterBySearch(data.renewalTimeline, globalSearch);
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-6">
+    <div className="space-y-4">
+      <PageHeader
+        eyebrow="Executive command centre"
+        title="Software estate health"
+        description="Unified SAM, SaaS, cost, renewal and compliance intelligence for Northstar Manufacturing."
+      />
+      <section className="min-w-0 overflow-hidden rounded-lg border border-slate-900/10 bg-slate-950 text-white shadow-panel">
+        <div className="grid min-w-0 gap-4 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.28),transparent_34%),linear-gradient(135deg,#0f172a_0%,#164e63_100%)] p-4 lg:grid-cols-[1.25fr_2fr_auto] lg:items-center">
+          <div className="min-w-0">
+            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Software estate health</div>
+            <div className="mt-2 flex items-end gap-2">
+              <span className="font-mono text-5xl font-semibold leading-none tracking-tight">{healthScore}%</span>
+              <span className="pb-1 text-sm font-semibold text-cyan-100">healthy</span>
+            </div>
+          </div>
+          <div className="grid min-w-0 gap-3 sm:grid-cols-3">
+            <InsightCard title="Key risk summary" variant="glass">
+              <div className="space-y-1 break-words text-sm font-medium text-cyan-50">
+                <div>{data.cards.complianceRiskCount} compliance risks</div>
+                <div>{data.cards.shadowSaasDetections} shadow SaaS detections</div>
+                <div>need review.</div>
+              </div>
+            </InsightCard>
+            <InsightCard title="Potential savings" variant="glass">
+              <div className="font-mono text-xl font-semibold text-white">{currency.format(data.cards.potentialSavings ?? 0)}</div>
+            </InsightCard>
+            <InsightCard title="Renewal exposure" variant="glass">
+              <div className="font-mono text-xl font-semibold text-white">{currency.format(renewalExposure)}</div>
+            </InsightCard>
+          </div>
+          <Button className="border-white/20 bg-white text-slate-950 hover:bg-cyan-50" onClick={() => { window.location.hash = 'costs'; }} type="button" variant="secondary">
+            Review recommendations
+          </Button>
+        </div>
+      </section>
+      <div className="grid gap-3 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {cardConfig.map(([key, label, icon, href], index) => (
           <MetricCard
             key={key}
@@ -183,13 +227,13 @@ export function DashboardPage({ globalSearch }: { globalSearch: string }) {
           />
         ))}
       </div>
-      <div className="grid gap-5 xl:grid-cols-2">
-        <Panel title="Spend by Vendor">
+      <div className="grid gap-4 xl:grid-cols-2">
+        <ChartCard title="Spend by vendor" insight={`${topVendor?.vendor ?? 'Top vendor'} represents ${topVendorShare}% of current monthly spend`}>
           <SpendChart data={data.spendByVendor} />
-        </Panel>
-        <Panel title="Usage by Category">
+        </ChartCard>
+        <ChartCard title="Usage by category" insight={`${activeUsageShare}% of tracked software minutes are active usage`}>
           <UsageChart data={data.usageByCategory} />
-        </Panel>
+        </ChartCard>
       </div>
       <DataTable
         title="Renewal Timeline"
@@ -241,7 +285,7 @@ export function InventoryPage({ globalSearch }: { globalSearch: string }) {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm xl:flex-row xl:items-center xl:justify-between">
+      <div className={`${cardSurface} flex flex-col gap-3 rounded-lg p-4 xl:flex-row xl:items-center xl:justify-between`}>
         <div className="flex flex-wrap gap-2">
           {['all', 'SaaS', 'desktop', 'server', 'cloud', 'AI tool', 'browser app'].map((item) => (
             <button
@@ -515,13 +559,16 @@ export function CostPage({ globalSearch }: { globalSearch: string }) {
   if (loading) return <LoadingState label="Loading cost centre" />;
   if (error || !data) return <ErrorState message={error ?? 'Cost data unavailable'} />;
   const rows = filterBySearch(data.records, globalSearch);
+  const costTotal = data.byVendor.reduce((sum, item) => sum + item.monthlyCost, 0);
+  const costLeader = [...data.byVendor].sort((a, b) => b.monthlyCost - a.monthlyCost)[0];
+  const costLeaderShare = costLeader && costTotal ? Math.round((costLeader.monthlyCost / costTotal) * 100) : 0;
 
   return (
     <div className="space-y-5">
       <div className="grid gap-5 xl:grid-cols-2">
-        <Panel title="Cost by Vendor">
+        <ChartCard title="Cost by vendor" insight={`${costLeader?.name ?? 'Top vendor'} represents ${costLeaderShare}% of current monthly cost`}>
           <SpendChart data={data.byVendor.map((item) => ({ vendor: item.name, spend: item.monthlyCost }))} />
-        </Panel>
+        </ChartCard>
         <DataTable
           title="Savings Recommendations"
           rows={data.recommendations}
@@ -649,7 +696,7 @@ export function IntegrationsPage({ globalSearch }: { globalSearch: string }) {
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       {rows.map((integration) => (
-        <section key={integration.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <section key={integration.id} className={`${cardSurface} rounded-lg p-4`}>
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="font-semibold text-ink">{integration.name}</h2>
@@ -739,7 +786,7 @@ export function ExportsPage({ globalSearch }: { globalSearch: string }) {
       </Panel>
       <div className="grid gap-4 xl:grid-cols-2">
         {rows.map((flow) => (
-          <section key={flow.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <section key={flow.id} className={`${cardSurface} rounded-lg p-4`}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="font-semibold text-ink">{flow.name}</h2>
@@ -795,7 +842,7 @@ export function AssistantPage() {
 
   return (
     <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
-      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+      <section className={`${cardSurface} overflow-hidden rounded-lg`}>
         <div className="border-b border-slate-200 p-4">
           <h2 className="font-semibold text-ink">Chat</h2>
         </div>
@@ -817,7 +864,7 @@ export function AssistantPage() {
       <div className="space-y-5">
         <div className="grid gap-2 md:grid-cols-2">
           {examples.map((example) => (
-            <button key={example} className="rounded-lg border border-slate-200 bg-white p-3 text-left text-sm font-medium text-slate-700 shadow-sm hover:border-cyan-300 hover:bg-cyan-50" onClick={() => submit(example)} type="button">
+            <button key={example} className={`${cardSurface} rounded-lg p-3 text-left text-sm font-medium text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50`} onClick={() => submit(example)} type="button">
               {example}
             </button>
           ))}
@@ -960,7 +1007,7 @@ export function ReportsPage({ globalSearch }: { globalSearch: string }) {
     <div className="space-y-5">
       <div className="grid gap-4 xl:grid-cols-2">
         {rows.map((report) => (
-          <section key={report.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <section key={report.id} className={`${cardSurface} rounded-lg p-4`}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="font-semibold text-ink">{report.name}</h2>

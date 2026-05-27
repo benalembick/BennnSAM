@@ -4,8 +4,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: '#17202a',
-        slatepanel: '#f5f7fb',
+        ink: '#0f172a',
+        slatepanel: '#f8fafc',
         brand: {
           50: '#ecfeff',
           100: '#cffafe',
@@ -15,7 +15,8 @@ export default {
         }
       },
       boxShadow: {
-        panel: '0 10px 30px rgba(21, 32, 43, 0.07)'
+        panel: '0 18px 45px rgba(15, 23, 42, 0.10)',
+        soft: '0 1px 2px rgba(15, 23, 42, 0.04), 0 14px 35px rgba(15, 23, 42, 0.06)'
       }
     }
   },
