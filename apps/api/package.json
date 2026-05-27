@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json && esbuild src/index.ts --bundle --platform=node --target=node18 --outfile=dist/server.js --format=esm --log-level=info",
+    "build": "tsc -p tsconfig.json && esbuild src/index.ts --bundle --platform=node --target=node18 --outfile=dist/server.js --format=cjs --log-level=info",
     "start": "node dist/server.js",
     "start:ts": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
