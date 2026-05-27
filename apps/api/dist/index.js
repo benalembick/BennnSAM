@@ -1,6 +1,5 @@
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -12,7 +11,8 @@ import { runAssistantQuery } from './reportEngine.js';
 dotenv.config();
 const app = express();
 const port = Number(process.env.PORT ?? process.env.API_PORT ?? 4100);
-const currentDir = dirname(fileURLToPath(import.meta.url));
+// process.argv[1] is the path to this script — works in both CJS bundles and ESM
+const currentDir = dirname(resolve(process.argv[1]));
 const webDistPath = resolve(currentDir, '../../web/dist');
 const webIndexPath = join(webDistPath, 'index.html');
 app.use(cors({
