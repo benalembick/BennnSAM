@@ -31,6 +31,7 @@ import type React from 'react';
 import { useMemo, useState } from 'react';
 import bennnSamLogo from '../assets/bennnsam-logo-cropped.png';
 import bennnSamMark from '../assets/bennnsam-mark.png';
+import { cloudabilityNav, type CloudabilityPageKey } from '../lib/cloudabilityNav';
 import { Badge, Button, SearchInput } from './ui';
 
 export type RouteKey =
@@ -49,7 +50,8 @@ export type RouteKey =
   | 'rules'
   | 'normalization'
   | 'reports'
-  | 'admin';
+  | 'admin'
+  | CloudabilityPageKey;
 
 const navItems = [
   { key: 'dashboard', label: 'Dashboard', icon: Home, group: 'Overview' },
@@ -67,10 +69,11 @@ const navItems = [
   { key: 'rules', label: 'Custom Inventory Rules', icon: SlidersHorizontal, group: 'Admin' },
   { key: 'normalization', label: 'Normalization Engine', icon: BrainCircuit, group: 'Admin' },
   { key: 'reports', label: 'Reporting', icon: FileBarChart, group: 'Admin' },
-  { key: 'admin', label: 'Roles and Permissions', icon: Users, group: 'Admin' }
+  { key: 'admin', label: 'Roles and Permissions', icon: Users, group: 'Admin' },
+  ...cloudabilityNav.map((item) => ({ ...item, group: 'BennnCloudability' }))
 ] satisfies Array<{ key: RouteKey; label: string; icon: typeof Home; group: string }>;
 
-const navGroups = ['Overview', 'Inventory', 'Licensing & Cost', 'Governance', 'Data & Automation', 'Admin'];
+const navGroups = ['Overview', 'Inventory', 'Licensing & Cost', 'Governance', 'BennnCloudability', 'Data & Automation', 'Admin'];
 
 export function Layout({
   route,

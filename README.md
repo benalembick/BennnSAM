@@ -10,6 +10,7 @@ BennnSam is an original Software Asset Management and SaaS Management MVP for in
 - Supabase Postgres schema and seed data
 - Supabase Auth-ready user profile model
 - RLS-ready multi-tenant database design
+- Integrated BennnCloudability multi-cloud FinOps module for AWS, Azure, GCP and OCI demo cost management
 - Deterministic AI-style report assistant with optional API-key extension point
 - Mock integrations, mock agent upload, CSV import/export, and export workflow runs
 
@@ -21,6 +22,7 @@ apps/
   web/        React/Vite frontend
 supabase/
   migrations/001_bennnsam_schema.sql
+  migrations/002_bennncloudability_schema.sql
   seed.sql
 .env.example
 ```
@@ -99,6 +101,8 @@ The schema is in [supabase/migrations/001_bennnsam_schema.sql](supabase/migratio
 
 Every operational table has `tenant_id`, RLS is enabled, and policies are prepared around a `tenant_id` claim in the Supabase JWT. The seed places `tenant_id` in `app_metadata` for the demo users.
 
+BennnCloudability schema extensions are in [supabase/migrations/002_bennncloudability_schema.sql](supabase/migrations/002_bennncloudability_schema.sql). Module design, permissions, connector extension notes and rightsizing verification are documented in [docs/BennnCloudability.md](docs/BennnCloudability.md).
+
 To use Supabase locally:
 
 ```bash
@@ -129,6 +133,9 @@ Then update `.env` with the local anon and service role keys shown by the Supaba
 - `POST /api/rules/test`
 - `GET /api/normalization`
 - `GET /api/reports`
+- `GET /api/cloudability`
+- `POST /api/cloudability/connections/:id/test`
+- `POST /api/cloudability/connections/:id/sync`
 - `POST /api/reports/run`
 - `POST /api/imports/csv`
 - `POST /api/agent/upload`

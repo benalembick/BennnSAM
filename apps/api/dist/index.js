@@ -8,6 +8,7 @@ import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { applications, auditLog, complianceResults, costRecords, customInventoryRules, departments, devices, exportWorkflows, integrations, licences, normalizationReviewQueue, reports, saasDetections, savingsRecommendations, usageEvents, users } from './demoData.js';
 import { runAssistantQuery } from './reportEngine.js';
+import { cloudConnections, cloudabilityPayload } from './cloudabilityData.js';
 dotenv.config();
 const app = express();
 const port = Number(process.env.PORT ?? process.env.API_PORT ?? 4100);
@@ -238,6 +239,27 @@ app.get('/api/normalization', (_req, res) => {
     });
 });
 app.get('/api/reports', (_req, res) => res.json(reports));
+app.get('/api/cloudability', (_req, res) => res.json(cloudabilityPayload()));
+app.post('/api/cloudability/connections/:id/test', (req, res) => {
+    const connection = cloudConnections.find((candidate) => candidate.id === req.params.id);
+    if (!connection)
+        return res.status(404).json({ error: 'Cloud connection not found' });
+    res.json({
+        ...connection,
+        status: connection.enabled ? 'Success' : 'Configuration required',
+        message: connection.enabled
+            ? `${connection.provider} connector credentials validated in demo mode.`
+            : `${connection.provider} connector is disabled; enable it before syncing.`
+    });
+});
+app.post('/api/cloudability/connections/:id/sync', (req, res) => {
+    const connection = cloudConnections.find((candidate) => candidate.id === req.params.id);
+    if (!connection)
+        return res.status(404).json({ error: 'Cloud connection not found' });
+    connection.lastSync = new Date().toISOString();
+    connection.status = 'Success';
+    res.json({ ...connection, message: `Demo ${connection.provider} cost sync completed.` });
+});
 app.post('/api/reports/run', (req, res) => {
     const report = reports.find((candidate) => candidate.id === req.body.reportId) ?? reports[0];
     res.json({

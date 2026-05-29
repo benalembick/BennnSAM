@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Layout, type RouteKey } from './components/Layout';
+import { CloudabilityRouter } from './pages/CloudabilityPages';
+import { cloudabilityNav, type CloudabilityPageKey } from './lib/cloudabilityNav';
 import {
   AdminPage,
   AssistantPage,
@@ -35,7 +37,8 @@ const routes = new Set<RouteKey>([
   'rules',
   'normalization',
   'reports',
-  'admin'
+  'admin',
+  ...cloudabilityNav.map((item) => item.key)
 ]);
 
 function routeFromHash(): RouteKey {
@@ -54,6 +57,10 @@ export default function App() {
   }, []);
 
   const page = useMemo(() => {
+    if (route.startsWith('cloudability')) {
+      return <CloudabilityRouter page={route as CloudabilityPageKey} globalSearch={globalSearch} />;
+    }
+
     switch (route) {
       case 'inventory':
         return <InventoryPage globalSearch={globalSearch} />;

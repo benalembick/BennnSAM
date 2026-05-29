@@ -206,3 +206,62 @@ insert into public.audit_log (tenant_id, actor_id, action, entity_type, changes)
   ('00000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','approved_application','application','{"application":"Figma"}'),
   ('00000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000003','updated_licence_rule','licence','{"application":"SQL Server"}'),
   ('00000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','created_export_workflow','export_workflow','{"workflow":"Renewal report to Finance CSV"}');
+
+-- BennnCloudability demo seed data.
+insert into public.cloud_providers (id, tenant_id, provider_code, name, enabled) values
+  ('a1000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001','AWS','Amazon Web Services',true),
+  ('a1000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001','Azure','Microsoft Azure',true),
+  ('a1000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000001','GCP','Google Cloud Platform',true),
+  ('a1000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000001','OCI','Oracle Cloud Infrastructure',true)
+on conflict (tenant_id, provider_code) do nothing;
+
+insert into public.cloud_accounts (id, tenant_id, provider_id, account_external_id, account_name, owner_id, team, application, environment, cost_centre) values
+  ('a2000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000001','123456789012','AWS Production','30000000-0000-0000-0000-000000000001','Platform','Customer Portal','Production','CC-100'),
+  ('a2000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000002','sub-eng-6ac4','Azure Engineering',null,'Engineering','Build Farm','Development','CC-210'),
+  ('a2000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000003','northstar-analytics','GCP Analytics','30000000-0000-0000-0000-000000000002','Analytics','Finance Analytics','Production','CC-410'),
+  ('a2000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000004','ocid1.tenancy.demo','OCI ERP','30000000-0000-0000-0000-000000000003','ERP','ERP Core','Production','CC-110')
+on conflict (tenant_id, provider_id, account_external_id) do nothing;
+
+insert into public.cloud_connections (id, tenant_id, provider_id, cloud_account_id, connection_name, auth_method, settings, enabled, last_sync_at, last_sync_status) values
+  ('a3000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000001','a2000000-0000-0000-0000-000000000001','AWS CUR and Cost Explorer','Assume role placeholder','{"external_id":"bennncloudability-demo"}',true,'2026-05-29 03:20:00+08','Success'),
+  ('a3000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000002','a2000000-0000-0000-0000-000000000002','Azure Cost Management','Service principal placeholder','{}',true,'2026-05-29 03:35:00+08','Success'),
+  ('a3000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000003','a2000000-0000-0000-0000-000000000003','GCP Billing Export','Service account placeholder','{}',true,'2026-05-29 04:05:00+08','Success'),
+  ('a3000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000004','a2000000-0000-0000-0000-000000000004','OCI Usage API','API signing key placeholder','{}',false,'2026-05-27 22:15:00+08','Token review');
+
+insert into public.cloud_resources (id, tenant_id, provider_id, cloud_account_id, provider_resource_id, resource_name, resource_type, service_name, region, sku, owner, team, application, environment, cost_centre, tags, labels, first_seen_at, last_seen_at) values
+  ('a4000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000001','a2000000-0000-0000-0000-000000000001','i-0apiworker01','prd-api-worker-01','Compute instance','EC2','ap-southeast-2','m6i.2xlarge','Ava Collins','Platform','Customer Portal','Production','CC-100','{"application":"customer-portal","env":"prod","owner":"platform"}','{}','2026-01-04 00:00:00+08','2026-05-29 03:20:00+08'),
+  ('a4000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000002','a2000000-0000-0000-0000-000000000002','/subscriptions/sub-eng-6ac4/vm/dev-build-agent-03','dev-build-agent-03','Compute instance','Virtual Machines','australiaeast','Standard_D2s_v5','Ben Martin','Engineering','Build Farm','Development','CC-210','{"application":"build-farm","env":"dev"}','{}','2026-03-08 00:00:00+08','2026-05-29 03:35:00+08'),
+  ('a4000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000003','a2000000-0000-0000-0000-000000000003','northstar-analytics.finance_mart','finance-mart','Warehouse','BigQuery','australia-southeast1','On demand','Sofia Walsh','Analytics','Finance Analytics','Production','CC-410','{"application":"finance-analytics","env":"prod"}','{}','2026-02-10 00:00:00+08','2026-05-29 04:05:00+08'),
+  ('a4000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000004','a2000000-0000-0000-0000-000000000004','ocid1.instance.erpnode02','erp-app-node-02','Compute instance','Compute','ap-sydney-1','VM.Standard.E4.Flex-8','Priya Singh','ERP','ERP Core','Production','CC-110','{"application":"erp-core"}','{}','2026-01-15 00:00:00+08','2026-05-27 22:15:00+08')
+on conflict (tenant_id, provider_id, provider_resource_id) do nothing;
+
+insert into public.cloud_billing_records (tenant_id, provider_id, cloud_account_id, cloud_resource_id, provider, account_identifier, region, service, resource_id, resource_name, resource_type, sku, usage_quantity, usage_unit, cost, currency, billing_period, tags, owner, team, application, environment, cost_centre) values
+  ('00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000001','a2000000-0000-0000-0000-000000000001','a4000000-0000-0000-0000-000000000001','AWS','123456789012','ap-southeast-2','EC2','i-0apiworker01','prd-api-worker-01','Compute instance','m6i.2xlarge',720,'hours',1480,'AUD','2026-05-01','{"application":"customer-portal","env":"prod"}','Ava Collins','Platform','Customer Portal','Production','CC-100'),
+  ('00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000002','a2000000-0000-0000-0000-000000000002','a4000000-0000-0000-0000-000000000002','Azure','sub-eng-6ac4','australiaeast','Virtual Machines','dev-build-agent-03','dev-build-agent-03','Compute instance','Standard_D2s_v5',720,'hours',360,'AUD','2026-05-01','{"application":"build-farm","env":"dev"}','Ben Martin','Engineering','Build Farm','Development','CC-210'),
+  ('00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000003','a2000000-0000-0000-0000-000000000003','a4000000-0000-0000-0000-000000000003','GCP','northstar-analytics','australia-southeast1','BigQuery','finance-mart','finance-mart','Warehouse','On demand',41,'TB scanned',8640,'AUD','2026-05-01','{"application":"finance-analytics","env":"prod"}','Sofia Walsh','Analytics','Finance Analytics','Production','CC-410'),
+  ('00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000004','a2000000-0000-0000-0000-000000000004','a4000000-0000-0000-0000-000000000004','OCI','ocid1.tenancy.demo','ap-sydney-1','Compute','erp-app-node-02','erp-app-node-02','Compute instance','VM.Standard.E4.Flex-8',720,'hours',930,'AUD','2026-05-01','{"application":"erp-core"}','Priya Singh','ERP','ERP Core','Production','CC-110');
+
+insert into public.cloud_resource_metrics (tenant_id, cloud_resource_id, metric_date, cpu_p95, cpu_p99, memory_p95, running_hours_30d, non_prod_after_hours_percent, storage_used_percent) values
+  ('00000000-0000-0000-0000-000000000001','a4000000-0000-0000-0000-000000000001','2026-05-29',11,24,42,720,null,null),
+  ('00000000-0000-0000-0000-000000000001','a4000000-0000-0000-0000-000000000002','2026-05-29',88,97,null,720,61,null),
+  ('00000000-0000-0000-0000-000000000001','a4000000-0000-0000-0000-000000000003','2026-05-29',58,76,null,720,null,null),
+  ('00000000-0000-0000-0000-000000000001','a4000000-0000-0000-0000-000000000004','2026-05-29',14,28,49,720,null,null)
+on conflict (tenant_id, cloud_resource_id, metric_date) do nothing;
+
+insert into public.cloud_rightsizing_recommendations (tenant_id, cloud_resource_id, recommendation_type, current_sku, recommended_sku, reason, supporting_metrics, estimated_monthly_saving, estimated_annual_saving, confidence_score, risk_score, status) values
+  ('00000000-0000-0000-0000-000000000001','a4000000-0000-0000-0000-000000000001','Downsize oversized compute','m6i.2xlarge','m6i.xlarge','p95 and p99 utilisation remain materially below policy thresholds.','{"cpu_p95":11,"cpu_p99":24,"memory_p95":42}',562,6744,86,34,'New'),
+  ('00000000-0000-0000-0000-000000000001','a4000000-0000-0000-0000-000000000002','Upsize under-provisioned compute','Standard_D2s_v5','Standard_D4s_v5','Sustained high p95/p99 CPU indicates performance risk.','{"cpu_p95":88,"cpu_p99":97,"memory":"unavailable"}',-79,-948,79,68,'Reviewing'),
+  ('00000000-0000-0000-0000-000000000001','a4000000-0000-0000-0000-000000000004','Downsize oversized compute','VM.Standard.E4.Flex-8','VM.Standard.E4.Flex-4','p95 and p99 utilisation remain materially below policy thresholds.','{"cpu_p95":14,"cpu_p99":28,"memory_p95":49}',353,4236,86,34,'New');
+
+insert into public.cloud_budgets (tenant_id, scope_type, scope_value, budget_amount, actual_spend, forecast_spend, burn_rate, alert_threshold, period_start, period_end) values
+  ('00000000-0000-0000-0000-000000000001','team','Platform',82000,74820,79600,94,90,'2026-05-01','2026-05-31'),
+  ('00000000-0000-0000-0000-000000000001','team','Engineering',62000,67950,70400,114,90,'2026-05-01','2026-05-31'),
+  ('00000000-0000-0000-0000-000000000001','application','Finance Analytics',36000,41370,45200,126,85,'2026-05-01','2026-05-31');
+
+insert into public.cloud_anomalies (tenant_id, provider_id, detected_at, affected_service, affected_owner_team, expected_cost, actual_cost, variance, likely_driver, status) values
+  ('00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000003','2026-05-22','BigQuery','Analytics',1410,3120,1710,'Finance mart backfill scanned 18 TB more than baseline.','Reviewing'),
+  ('00000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000002','2026-05-18','Microsoft Sentinel','Security',950,1840,890,'Diagnostic logs duplicated from firewall workspace.','New');
+
+insert into public.cloud_reports (tenant_id, name, description, dataset, filters, export_formats, schedule, created_by) values
+  ('00000000-0000-0000-0000-000000000001','Executive Cloud Summary','Board-ready cloud spend, forecast, variance and savings summary.','cloud_billing_records','["period","provider","team"]','{CSV,XLSX,PDF}','monthly','30000000-0000-0000-0000-000000000001'),
+  ('00000000-0000-0000-0000-000000000001','Rightsizing Opportunities','p95/p99 based recommendations with confidence, risk and savings.','cloud_rightsizing_recommendations','["provider","status","risk"]','{CSV,XLSX,PDF}','weekly','30000000-0000-0000-0000-000000000003');

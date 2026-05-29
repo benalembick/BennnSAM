@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Test-Path \"c:\\\\Users\\\\balembic\\\\Documents\\\\BennnSAM\\\\.env\")",
+      "PowerShell(npx supabase status 2>&1)"
+    ]
+  }
+}

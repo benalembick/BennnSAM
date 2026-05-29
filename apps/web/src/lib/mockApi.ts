@@ -22,6 +22,7 @@ import {
   usageEvents,
   users
 } from './demoData';
+import { cloudConnections, cloudabilityPayload } from './cloudabilityData';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -326,6 +327,9 @@ export function mockGet<T>(path: string): T {
   // /reports
   if (bare === '/reports') return reports as unknown as T;
 
+  // /cloudability
+  if (bare === '/cloudability') return cloudabilityPayload() as unknown as T;
+
   throw new Error(`[demo] No mock GET handler for ${path}`);
 }
 
@@ -406,6 +410,30 @@ export function mockPost<T>(path: string, body: unknown): T {
   if (bare === '/reports/run') {
     const report = reports.find(r => r.id === b.reportId) ?? reports[0];
     return { id: mockId('run'), report, ranAt: new Date().toISOString(), rows: sampleRowsForDataset(report.dataset), exportUrl: `/api/reports/${report.id}/export.csv` } as unknown as T;
+  }
+
+  // /cloudability/connections/:id/test
+  const cloudTestMatch = matchPath('/cloudability/connections/:id/test', bare);
+  if (cloudTestMatch) {
+    const connection = cloudConnections.find(c => c.id === cloudTestMatch.id);
+    if (!connection) throw new Error('Cloud connection not found');
+    return {
+      ...connection,
+      status: connection.enabled ? 'Success' : 'Configuration required',
+      message: connection.enabled
+        ? `${connection.provider} connector credentials validated in demo mode.`
+        : `${connection.provider} connector is disabled; enable it before syncing.`
+    } as unknown as T;
+  }
+
+  // /cloudability/connections/:id/sync
+  const cloudSyncMatch = matchPath('/cloudability/connections/:id/sync', bare);
+  if (cloudSyncMatch) {
+    const connection = cloudConnections.find(c => c.id === cloudSyncMatch.id);
+    if (!connection) throw new Error('Cloud connection not found');
+    connection.lastSync = new Date().toISOString();
+    connection.status = 'Success';
+    return { ...connection, message: `Demo ${connection.provider} cost sync completed.` } as unknown as T;
   }
 
   throw new Error(`[demo] No mock POST handler for ${path}`);
