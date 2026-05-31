@@ -253,30 +253,36 @@ export function createAuthProvider(): {
         return;
       }
 
+      const apiBase = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
+      let resp: Response;
       try {
-        const apiBase = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
-        const resp = await fetch(`${apiBase}/auth/me`, {
+        resp = await fetch(`${apiBase}/auth/me`, {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
-        if (!resp.ok) { setProfile(null); setToken(null); return; }
-        const data = await resp.json() as Record<string, unknown>;
-        setProfile({
-          userId:        String(data.id ?? data.userId ?? ''),
-          email:         String(data.email ?? ''),
-          fullName:      String(data.full_name ?? data.fullName ?? ''),
-          role:          (data.role as UserRole) ?? 'read_only',
-          isSuperAdmin:  Boolean(data.is_super_admin ?? data.isSuperAdmin),
-          tenantId:      String(data.tenant_id ?? data.tenantId ?? ''),
-          tenantName:    String((data.tenant as Record<string, unknown>)?.name ?? data.tenantName ?? 'Unknown'),
-          tenantLogoUrl: ((data.tenant as Record<string, unknown>)?.logo_url as string | null) ?? (data.tenantLogoUrl as string | null) ?? null,
-          status:        (data.status as UserProfile['status']) ?? 'active',
-          lastLoginAt:   data.last_login_at ? String(data.last_login_at) : null
-        });
-        setToken(accessToken);
       } catch {
         setProfile(null);
         setToken(null);
+        throw new Error(`Cannot reach the BennnSAM API at ${apiBase}. Check VITE_API_URL or rebuild with demo mode.`);
       }
+      if (!resp.ok) {
+        setProfile(null);
+        setToken(null);
+        throw new Error(`Profile load failed (HTTP ${resp.status}). The API server may not be configured correctly.`);
+      }
+      const data = await resp.json() as Record<string, unknown>;
+      setProfile({
+        userId:        String(data.id ?? data.userId ?? ''),
+        email:         String(data.email ?? ''),
+        fullName:      String(data.full_name ?? data.fullName ?? ''),
+        role:          (data.role as UserRole) ?? 'read_only',
+        isSuperAdmin:  Boolean(data.is_super_admin ?? data.isSuperAdmin),
+        tenantId:      String(data.tenant_id ?? data.tenantId ?? ''),
+        tenantName:    String((data.tenant as Record<string, unknown>)?.name ?? data.tenantName ?? 'Unknown'),
+        tenantLogoUrl: ((data.tenant as Record<string, unknown>)?.logo_url as string | null) ?? (data.tenantLogoUrl as string | null) ?? null,
+        status:        (data.status as UserProfile['status']) ?? 'active',
+        lastLoginAt:   data.last_login_at ? String(data.last_login_at) : null
+      });
+      setToken(accessToken);
     }, []);
 
     // Restore session on mount.
@@ -286,13 +292,13 @@ export function createAuthProvider(): {
         try {
           if (DEMO_MODE) {
             const saved = sessionStorage.getItem(DEMO_TOKEN_KEY);
-            if (saved) await hydrateFromToken(saved);
+            if (saved) await hydrateFromToken(saved).catch(() => { /* stale token */ });
           } else if (supabase) {
             const { data: { session } } = await supabase.auth.getSession();
-            if (session?.access_token) await hydrateFromToken(session.access_token);
+            if (session?.access_token) await hydrateFromToken(session.access_token).catch(() => { /* stale session */ });
           } else {
             const saved = sessionStorage.getItem(DEMO_TOKEN_KEY);
-            if (saved) await hydrateFromToken(saved);
+            if (saved) await hydrateFromToken(saved).catch(() => { /* stale token */ });
           }
         } finally {
           setLoading(false);
@@ -315,7 +321,7 @@ export function createAuthProvider(): {
           setRecovery(false);
         }
         if (session?.access_token) {
-          await hydrateFromToken(session.access_token);
+          await hydrateFromToken(session.access_token).catch(() => { /* background refresh, ignore */ });
         } else {
           setProfile(null);
           setToken(null);
@@ -375,7 +381,7 @@ export function createAuthProvider(): {
     }, []);
 
     const refreshProfile = useCallback(async () => {
-      if (token) await hydrateFromToken(token);
+      if (token) await hydrateFromToken(token).catch(() => { /* ignore background refresh failures */ });
     }, [token, hydrateFromToken]);
 
     const updateProfile = useCallback(async (data: { fullName?: string; email?: string; password?: string }) => {
