@@ -17,6 +17,7 @@ import {
   Home,
   KeyRound,
   LibraryBig,
+  LogOut,
   Menu,
   PackageSearch,
   Plus,
@@ -28,10 +29,11 @@ import {
   X
 } from 'lucide-react';
 import type React from 'react';
-import { useMemo, useState } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import bennnSamLogo from '../assets/bennnsam-logo-cropped.png';
 import bennnSamMark from '../assets/bennnsam-mark.png';
 import { cloudabilityNav, type CloudabilityPageKey } from '../lib/cloudabilityNav';
+import { useAuth, canViewCloudCosts, ROLE_LABELS, type UserRole } from '../lib/auth';
 import { Badge, Button, SearchInput } from './ui';
 
 export type RouteKey =
@@ -53,25 +55,25 @@ export type RouteKey =
   | 'admin'
   | CloudabilityPageKey;
 
-const navItems = [
-  { key: 'dashboard', label: 'Dashboard', icon: Home, group: 'Overview' },
-  { key: 'inventory', label: 'Software Inventory', icon: PackageSearch, group: 'Inventory' },
-  { key: 'devices', label: 'Device and Agent Inventory', icon: Cpu, group: 'Inventory' },
-  { key: 'usage', label: 'Active Usage Tracking', icon: BarChart3, group: 'Inventory' },
-  { key: 'saas', label: 'SaaS Discovery', icon: LibraryBig, group: 'Inventory' },
-  { key: 'licences', label: 'Licence Management', icon: KeyRound, group: 'Licensing & Cost' },
-  { key: 'costs', label: 'Cost Centre', icon: Building2, group: 'Licensing & Cost' },
-  { key: 'compliance', label: 'Compliance and Risk', icon: ShieldCheck, group: 'Governance' },
-  { key: 'hardware', label: 'Hardware Assets', icon: HardDrive, group: 'Governance' },
-  { key: 'integrations', label: 'Integrations Hub', icon: Cable, group: 'Data & Automation' },
-  { key: 'exports', label: 'DataBridge Exports', icon: DatabaseZap, group: 'Data & Automation' },
-  { key: 'assistant', label: 'AI Report Assistant', icon: Bot, group: 'Data & Automation' },
-  { key: 'rules', label: 'Custom Inventory Rules', icon: SlidersHorizontal, group: 'Admin' },
-  { key: 'normalization', label: 'Normalization Engine', icon: BrainCircuit, group: 'Admin' },
-  { key: 'reports', label: 'Reporting', icon: FileBarChart, group: 'Admin' },
-  { key: 'admin', label: 'Roles and Permissions', icon: Users, group: 'Admin' },
-  ...cloudabilityNav.map((item) => ({ ...item, group: 'BennnCloudability' }))
-] satisfies Array<{ key: RouteKey; label: string; icon: typeof Home; group: string }>;
+const allNavItems = [
+  { key: 'dashboard',     label: 'Dashboard',               icon: Home,             group: 'Overview',            roles: null },
+  { key: 'inventory',     label: 'Software Inventory',      icon: PackageSearch,    group: 'Inventory',           roles: null },
+  { key: 'devices',       label: 'Device and Agent Inventory', icon: Cpu,            group: 'Inventory',           roles: null },
+  { key: 'usage',         label: 'Active Usage Tracking',   icon: BarChart3,        group: 'Inventory',           roles: null },
+  { key: 'saas',          label: 'SaaS Discovery',          icon: LibraryBig,       group: 'Inventory',           roles: null },
+  { key: 'licences',      label: 'Licence Management',      icon: KeyRound,         group: 'Licensing & Cost',    roles: null },
+  { key: 'costs',         label: 'Cost Centre',             icon: Building2,        group: 'Licensing & Cost',    roles: null },
+  { key: 'compliance',    label: 'Compliance and Risk',     icon: ShieldCheck,      group: 'Governance',          roles: null },
+  { key: 'hardware',      label: 'Hardware Assets',         icon: HardDrive,        group: 'Governance',          roles: null },
+  { key: 'integrations',  label: 'Integrations Hub',        icon: Cable,            group: 'Data & Automation',   roles: ['tenant_admin', 'asset_manager'] as UserRole[] },
+  { key: 'exports',       label: 'DataBridge Exports',      icon: DatabaseZap,      group: 'Data & Automation',   roles: ['tenant_admin', 'asset_manager'] as UserRole[] },
+  { key: 'assistant',     label: 'AI Report Assistant',     icon: Bot,              group: 'Data & Automation',   roles: null },
+  { key: 'rules',         label: 'Custom Inventory Rules',  icon: SlidersHorizontal, group: 'Admin',              roles: ['tenant_admin', 'asset_manager'] as UserRole[] },
+  { key: 'normalization', label: 'Normalization Engine',    icon: BrainCircuit,     group: 'Admin',               roles: ['tenant_admin', 'asset_manager'] as UserRole[] },
+  { key: 'reports',       label: 'Reporting',               icon: FileBarChart,     group: 'Admin',               roles: null },
+  { key: 'admin',         label: 'Roles and Permissions',   icon: Users,            group: 'Admin',               roles: ['tenant_admin'] as UserRole[] },
+  ...cloudabilityNav.map((item) => ({ ...item, group: 'BennnCloudability', roles: ['tenant_admin', 'finance_user'] as UserRole[] }))
+] satisfies Array<{ key: RouteKey; label: string; icon: typeof Home; group: string; roles: UserRole[] | null }>;
 
 const navGroups = ['Overview', 'Inventory', 'Licensing & Cost', 'Governance', 'BennnCloudability', 'Data & Automation', 'Admin'];
 
@@ -109,15 +111,17 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed]   = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const current = useMemo(() => navItems.find((item) => item.key === route) ?? navItems[0], [route]);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const current = useMemo(() => allNavItems.find((item) => item.key === route) ?? allNavItems[0], [route]);
 
   const sidebar = (
     <Sidebar
       collapsed={collapsed}
       route={route}
       onCollapse={() => setCollapsed((value) => !value)}
+      onOpenProfile={() => setProfileOpen(true)}
       onRouteChange={(nextRoute) => {
         onRouteChange(nextRoute);
         setMobileOpen(false);
@@ -138,6 +142,7 @@ export function AppShell({
               collapsed={false}
               route={route}
               onCollapse={() => setMobileOpen(false)}
+              onOpenProfile={() => { setMobileOpen(false); setProfileOpen(true); }}
               onRouteChange={(nextRoute) => {
                 onRouteChange(nextRoute);
                 setMobileOpen(false);
@@ -151,6 +156,7 @@ export function AppShell({
           currentLabel={current.label}
           globalSearch={globalSearch}
           onMobileMenu={() => setMobileOpen(true)}
+          onOpenProfile={() => setProfileOpen(true)}
           onRouteChange={onRouteChange}
           onToggleFilters={() => setFiltersOpen(true)}
           setGlobalSearch={setGlobalSearch}
@@ -158,6 +164,7 @@ export function AppShell({
         <main className="mx-auto w-full max-w-[1680px] px-3 py-4 sm:px-4 md:px-6 lg:px-7">{children}</main>
       </div>
       <FilterDrawer open={filtersOpen} onClose={() => setFiltersOpen(false)} />
+      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
   );
 }
@@ -166,23 +173,36 @@ export function Sidebar({
   collapsed,
   route,
   onRouteChange,
-  onCollapse
+  onCollapse,
+  onOpenProfile
 }: {
   collapsed: boolean;
   route: RouteKey;
   onRouteChange: (route: RouteKey) => void;
   onCollapse: () => void;
+  onOpenProfile: () => void;
 }) {
+  const { profile, signOut } = useAuth();
+
+  const visibleItems = useMemo(() => {
+    if (!profile) return allNavItems;
+    return allNavItems.filter((item) => {
+      if (!item.roles) return true;
+      if (profile.isSuperAdmin) return true;
+      return item.roles.includes(profile.role as UserRole);
+    });
+  }, [profile]);
+
+  const initials = profile
+    ? profile.fullName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+    : '?';
+
   return (
     <aside className="flex h-full flex-col border-r border-slate-200/80 bg-white/90 shadow-[12px_0_35px_rgba(15,23,42,0.04)] backdrop-blur-xl">
       <div className={clsx('flex h-16 items-center border-b border-slate-200/80 px-3', collapsed ? 'justify-center' : 'justify-between gap-3')}>
         <div className={clsx('flex min-w-0 items-center', collapsed ? 'justify-center' : 'flex-1')}>
           {!collapsed ? (
-            <img
-              alt="BennnSam - SAM & SaaS Intelligence Platform"
-              className="h-11 w-auto max-w-[178px] object-contain"
-              src={bennnSamLogo}
-            />
+            <img alt="BennnSam - SAM & SaaS Intelligence Platform" className="h-11 w-auto max-w-[178px] object-contain" src={bennnSamLogo} />
           ) : (
             <img alt="BennnSam" className="h-10 w-10 rounded-lg object-contain shadow-sm" src={bennnSamMark} />
           )}
@@ -196,15 +216,17 @@ export function Sidebar({
           <Button aria-label="Expand sidebar" icon={ChevronRight} onClick={onCollapse} size="icon" type="button" variant="ghost" />
         </div>
       ) : null}
+
       <nav className="flex-1 overflow-y-auto px-2 py-3 scrollbar-thin" aria-label="Primary navigation">
         {navGroups.map((group) => {
-          const groupItems = navItems.filter((item) => item.group === group);
+          const groupItems = visibleItems.filter((item) => item.group === group);
+          if (!groupItems.length) return null;
           return (
             <div className="mb-4 last:mb-0" key={group}>
               {!collapsed ? <div className="mb-1 px-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{group}</div> : null}
               <div className="space-y-1">
                 {groupItems.map((item) => {
-                  const Icon = item.icon;
+                  const Icon   = item.icon;
                   const active = route === item.key;
                   return (
                     <button
@@ -235,11 +257,61 @@ export function Sidebar({
           );
         })}
       </nav>
-      <div className={clsx('border-t border-slate-200/80 p-3', collapsed && 'flex justify-center')}>
-        <Badge tone="brand" className={collapsed ? 'px-2' : undefined}>
-          {collapsed ? 'Demo' : 'Demo tenant'}
-        </Badge>
-        {!collapsed ? <div className="mt-2 truncate text-xs font-medium text-slate-500">Northstar Manufacturing</div> : null}
+
+      {/* User / tenant footer */}
+      <div className={clsx('border-t border-slate-200/80 p-3', collapsed ? 'flex flex-col items-center gap-2' : 'space-y-2')}>
+        {!collapsed && profile ? (
+          <>
+            <button
+              type="button"
+              onClick={onOpenProfile}
+              title="Edit profile"
+              className="flex w-full items-center gap-2 min-w-0 rounded-md p-1 -m-1 text-left hover:bg-slate-100/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-600 to-slate-900 text-xs font-bold text-white">
+                {initials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-xs font-semibold text-slate-800">{profile.fullName}</div>
+                <div className="truncate text-[10px] text-slate-500">{ROLE_LABELS[profile.role as UserRole] ?? profile.role}</div>
+              </div>
+            </button>
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <Badge tone={profile.isSuperAdmin ? 'risk' : 'brand'} className="max-w-full truncate">
+                  {profile.isSuperAdmin ? 'Super Admin' : profile.tenantName}
+                </Badge>
+              </div>
+              <button
+                type="button"
+                onClick={() => signOut()}
+                title="Sign out"
+                className="shrink-0 rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          </>
+        ) : collapsed && profile ? (
+          <>
+            <button
+              type="button"
+              onClick={onOpenProfile}
+              title={`${profile.fullName} — Edit profile`}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-cyan-600 to-slate-900 text-xs font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-1"
+            >
+              {initials}
+            </button>
+            <button
+              type="button"
+              onClick={() => signOut()}
+              title="Sign out"
+              className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </>
+        ) : null}
       </div>
     </aside>
   );
@@ -251,7 +323,8 @@ export function TopBar({
   setGlobalSearch,
   onMobileMenu,
   onToggleFilters,
-  onRouteChange
+  onRouteChange,
+  onOpenProfile
 }: {
   currentLabel: string;
   globalSearch: string;
@@ -259,14 +332,33 @@ export function TopBar({
   onMobileMenu: () => void;
   onToggleFilters: () => void;
   onRouteChange: (route: RouteKey) => void;
+  onOpenProfile: () => void;
 }) {
+  const { profile } = useAuth();
+
+  const initials = profile
+    ? profile.fullName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+    : '?';
+
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl">
       <div className="mx-auto flex min-h-16 w-full max-w-[1680px] flex-col gap-3 px-3 py-3 sm:px-4 md:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-7">
         <div className="flex min-w-0 items-center gap-3">
           <Button aria-label="Open navigation" icon={Menu} onClick={onMobileMenu} size="icon" type="button" variant="ghost" className="lg:hidden" />
           <div className="min-w-0">
-            <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Workspace</div>
+            {profile ? (
+              profile.tenantLogoUrl && !profile.isSuperAdmin ? (
+                <img
+                  src={profile.tenantLogoUrl}
+                  alt={profile.tenantName}
+                  className="mb-0.5 h-5 w-auto max-w-[140px] object-contain"
+                />
+              ) : (
+                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                  {profile.isSuperAdmin ? 'Super Admin' : profile.tenantName}
+                </div>
+              )
+            ) : null}
             <h1 className="truncate text-lg font-semibold tracking-tight text-slate-950">{currentLabel}</h1>
           </div>
         </div>
@@ -279,6 +371,7 @@ export function TopBar({
             onChange={setGlobalSearch}
           />
           <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+            {profile && canViewCloudCosts(profile.role as UserRole, profile.isSuperAdmin) ? null : null}
             <Button className="w-full sm:w-auto" icon={Plus} onClick={() => onRouteChange('reports')} type="button" variant="secondary">
               New report
             </Button>
@@ -292,11 +385,13 @@ export function TopBar({
               Filters
             </Button>
             <button
-              aria-label="Open user menu"
+              aria-label={profile?.fullName ?? 'User menu'}
+              title={profile ? `${profile.fullName} — ${ROLE_LABELS[profile.role as UserRole] ?? profile.role} · Edit profile` : 'User'}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-cyan-600 to-slate-900 text-xs font-bold text-white shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
+              onClick={onOpenProfile}
               type="button"
             >
-              AC
+              {initials}
             </button>
           </div>
         </div>
@@ -306,6 +401,7 @@ export function TopBar({
 }
 
 export function FilterDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { profile } = useAuth();
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50">
@@ -322,15 +418,209 @@ export function FilterDrawer({ open, onClose }: { open: boolean; onClose: () => 
           <FilterGroup title="Business units" options={['Manufacturing', 'Finance', 'Operations', 'Information Technology']} />
           <FilterGroup title="Risk posture" options={['High and critical', 'Missing owner', 'Shadow SaaS', 'Renewal exposure']} />
           <FilterGroup title="Time horizon" options={['Next 30 days', 'Next 90 days', 'Current quarter', 'FY planning']} />
-          <div className="rounded-lg border border-cyan-100 bg-cyan-50 p-3 text-sm text-cyan-900">
-            <div className="font-semibold">Current tenant</div>
-            <div className="mt-1 text-cyan-800">Northstar Manufacturing demo estate</div>
-          </div>
+          {profile ? (
+            <div className="rounded-lg border border-cyan-100 bg-cyan-50 p-3 text-sm text-cyan-900">
+              <div className="font-semibold">Current tenant</div>
+              <div className="mt-1 text-cyan-800">{profile.tenantName}</div>
+              <div className="mt-0.5 text-xs text-cyan-600">{ROLE_LABELS[profile.role as UserRole] ?? profile.role}</div>
+            </div>
+          ) : null}
           <Button className="w-full" icon={ClipboardCheck} onClick={onClose} type="button" variant="primary">
             Apply filters
           </Button>
         </div>
       </aside>
+    </div>
+  );
+}
+
+function ProfileModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { profile, updateProfile } = useAuth();
+  const [tab, setTab] = useState<'profile' | 'security'>('profile');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open && profile) {
+      setFullName(profile.fullName);
+      setEmail(profile.email);
+      setPassword('');
+      setConfirmPassword('');
+      setError(null);
+      setSuccess(null);
+      setTab('profile');
+    }
+  }, [open, profile]);
+
+  if (!open || !profile) return null;
+
+  const initials = profile.fullName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+
+  async function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    if (!fullName.trim()) { setError('Name is required.'); return; }
+    setLoading(true);
+    try {
+      await updateProfile({ fullName: fullName.trim(), email: email.trim() || undefined });
+      setSuccess('Profile updated.');
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSavePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
+    setLoading(true);
+    try {
+      await updateProfile({ password });
+      setPassword('');
+      setConfirmPassword('');
+      setSuccess('Password updated.');
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function switchTab(next: 'profile' | 'security') {
+    setTab(next);
+    setError(null);
+    setSuccess(null);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button className="absolute inset-0 bg-slate-950/35 backdrop-blur-sm" onClick={onClose} type="button" aria-label="Close" />
+      <div className="relative w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-cyan-700">Account</div>
+            <h2 className="mt-0.5 text-base font-semibold text-slate-950">Edit Profile</h2>
+          </div>
+          <Button aria-label="Close" icon={X} onClick={onClose} size="icon" type="button" variant="ghost" />
+        </div>
+
+        <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-600 to-slate-900 text-sm font-bold text-white">
+            {initials}
+          </div>
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold text-slate-900">{profile.fullName}</div>
+            <div className="truncate text-xs text-slate-500">
+              {ROLE_LABELS[profile.role as UserRole] ?? profile.role}
+              {profile.tenantName ? ` · ${profile.tenantName}` : ''}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex border-b border-slate-200 px-5">
+          <button
+            type="button"
+            onClick={() => switchTab('profile')}
+            className={clsx('mr-5 border-b-2 px-1 py-3 text-sm font-semibold transition-colors', tab === 'profile' ? 'border-cyan-600 text-cyan-700' : 'border-transparent text-slate-500 hover:text-slate-700')}
+          >
+            Profile
+          </button>
+          <button
+            type="button"
+            onClick={() => switchTab('security')}
+            className={clsx('border-b-2 px-1 py-3 text-sm font-semibold transition-colors', tab === 'security' ? 'border-cyan-600 text-cyan-700' : 'border-transparent text-slate-500 hover:text-slate-700')}
+          >
+            Security
+          </button>
+        </div>
+
+        <div className="p-5">
+          {error ? (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+          ) : null}
+          {success ? (
+            <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{success}</div>
+          ) : null}
+
+          {tab === 'profile' ? (
+            <form onSubmit={handleSaveProfile} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-700" htmlFor="profile-name">Full name</label>
+                <input
+                  id="profile-name"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Your full name"
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-700" htmlFor="profile-email">Email address</label>
+                <input
+                  id="profile-email"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <Button onClick={onClose} type="button" variant="secondary">Cancel</Button>
+                <Button disabled={loading} type="submit" variant="primary">
+                  {loading ? 'Saving…' : 'Save changes'}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleSavePassword} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-700" htmlFor="profile-password">New password</label>
+                <input
+                  id="profile-password"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  minLength={8}
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-700" htmlFor="profile-confirm">Confirm new password</label>
+                <input
+                  id="profile-confirm"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repeat new password"
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <Button onClick={onClose} type="button" variant="secondary">Cancel</Button>
+                <Button disabled={loading} type="submit" variant="primary">
+                  {loading ? 'Saving…' : 'Update password'}
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

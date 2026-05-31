@@ -232,3 +232,44 @@ export interface CreatedAgentKey extends AgentKey {
   apiKey: string;
   installCommand: string;
 }
+
+export interface AgentUpload {
+  id: string;
+  receivedAt: string;
+  deviceId: string;
+  hostname: string;
+  installedApplicationCount: number;
+  runningProcessCount: number;
+}
+
+// ─── Multi-tenant auth types ────────────────────────────────────────────────
+
+export type UserStatus = 'active' | 'invited' | 'disabled';
+export type TenantStatus = 'active' | 'trial' | 'disabled';
+
+export interface TenantUser {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+  status: UserStatus;
+  lastLoginAt: string | null;
+  invitedAt: string | null;
+  createdAt: string;
+  departmentId: string | null;
+}
+
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  status: TenantStatus;
+  disabledAt: string | null;
+  enrollmentKey: string | null;
+  logoUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  userCount?: number;
+  deviceCount?: number;
+  agentCount?: number;
+}

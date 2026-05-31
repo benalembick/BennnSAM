@@ -124,6 +124,7 @@ public sealed class QueueEnvelope
     public byte[] Tag { get; set; } = Array.Empty<byte>();
 }
 
+[JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(AgentConfig))]
 [JsonSerializable(typeof(InventoryPayload))]
 [JsonSerializable(typeof(QueueEnvelope))]

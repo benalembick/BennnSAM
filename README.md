@@ -54,7 +54,7 @@ npm run dev
 ```
 
 The API runs on `http://localhost:4100/api`.
-The web app runs on `http://localhost:5173`.
+The web app runs on `http://localhost:5172`.
 
 ## Demo Login
 
