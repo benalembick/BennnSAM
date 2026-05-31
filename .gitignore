@@ -1,4 +1,5 @@
 node_modules
+.dotnet-sdk
 .env
 .env.local
 .DS_Store
