@@ -1,0 +1,36 @@
+{
+  "api": {
+    "primaryEndpoint": "https://api.bennsam.io",
+    "backupEndpoint": "https://backup-api.bennsam.io",
+    "inventoryPath": "/v1/agents/{deviceId}/inventory",
+    "certificatePins": [],
+    "timeoutSeconds": 60
+  },
+  "collection": {
+    "enabledModules": [
+      "system",
+      "software",
+      "hardware",
+      "licensing",
+      "compliance"
+    ],
+    "cacheTtlHours": 6,
+    "maxParallelism": 4,
+    "excludePublishers": [],
+    "excludeApplications": [],
+    "excludeProcessPaths": [
+      "\\Windows\\Temp\\",
+      "\\AppData\\Local\\Temp\\"
+    ]
+  },
+  "upload": {
+    "intervalHours": 24,
+    "maxQueueAgeDays": 7,
+    "requireUserConfirmation": true,
+    "allowUploadWithoutPrompt": false
+  },
+  "logging": {
+    "retentionDays": 30,
+    "maxFileMb": 10
+  }
+}

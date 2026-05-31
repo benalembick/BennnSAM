@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>agent</AssemblyName>
+    <RootNamespace>BennnSAM.Agent</RootNamespace>
+    <Version>1.0.0</Version>
+    <Authors>BennnSAM</Authors>
+    <Company>BennnSAM</Company>
+    <Description>Lightweight Windows software asset inventory agent.</Description>
+    <PublishSingleFile>true</PublishSingleFile>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="6.0.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="6.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="agent-config.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
