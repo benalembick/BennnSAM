@@ -1,7 +1,7 @@
 {
   "api": {
-    "primaryEndpoint": "https://api.bennsam.io",
-    "backupEndpoint": "https://backup-api.bennsam.io",
+    "primaryEndpoint": "http://localhost:4100",
+    "backupEndpoint": "",
     "inventoryPath": "/v1/agents/{deviceId}/inventory",
     "certificatePins": [],
     "timeoutSeconds": 60

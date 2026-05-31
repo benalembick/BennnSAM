@@ -216,3 +216,19 @@ export interface BootstrapData {
   users: Array<{ id: string; name: string; email: string; role: string; department: string }>;
   auditLog: Array<{ id: string; actor: string; action: string; entity: string; at: string }>;
 }
+
+export interface AgentKey {
+  id: string;
+  tenantId: string;
+  name: string;
+  keyPrefix: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  revokedAt: string | null;
+  status: 'active' | 'revoked';
+}
+
+export interface CreatedAgentKey extends AgentKey {
+  apiKey: string;
+  installCommand: string;
+}

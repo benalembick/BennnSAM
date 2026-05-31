@@ -66,6 +66,17 @@ function mockId(prefix: string) {
   return `${prefix}-${(++_mockIdCounter).toString(36).padStart(4, '0')}`;
 }
 
+const agentKeys: Array<{
+  id: string;
+  tenantId: string;
+  name: string;
+  keyPrefix: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  revokedAt: string | null;
+  status: 'active' | 'revoked';
+}> = [];
+
 // ---------------------------------------------------------------------------
 // Assistant query (ported from apps/api/src/reportEngine.ts)
 // ---------------------------------------------------------------------------
@@ -330,6 +341,8 @@ export function mockGet<T>(path: string): T {
   // /cloudability
   if (bare === '/cloudability') return cloudabilityPayload() as unknown as T;
 
+  if (bare === '/admin/agent-keys') return agentKeys as unknown as T;
+
   throw new Error(`[demo] No mock GET handler for ${path}`);
 }
 
@@ -346,6 +359,26 @@ export function mockPost<T>(path: string, body: unknown): T {
   // /agent/upload
   if (bare === '/agent/upload') {
     return { uploadId: mockId('agent'), receivedAt: new Date().toISOString(), accepted: true, hostname: (b.hostname as string) ?? 'unknown-host', message: 'Mock agent payload accepted for inventory normalization. No endpoint monitoring is performed.' } as unknown as T;
+  }
+
+  if (bare === '/admin/agent-keys') {
+    const apiKey = `bsam_agent_demo_${mockId('key')}`;
+    const created = {
+      id: mockId('agent-key'),
+      tenantId: '00000000-0000-0000-0000-000000000001',
+      name: String(b.name ?? 'Agent install key'),
+      keyPrefix: `${apiKey.slice(0, 18)}...`,
+      createdAt: new Date().toISOString(),
+      lastUsedAt: null,
+      revokedAt: null,
+      status: 'active' as const
+    };
+    agentKeys.unshift(created);
+    return {
+      ...created,
+      apiKey,
+      installCommand: `.\\_inventory-agent\\scripts\\install-user.ps1 -SourceExe .\\_inventory-agent\\publish\\win-x64\\agent.exe -Config .\\_inventory-agent\\agent-config.json -ApiKey "${apiKey}" -RunInitialScan`
+    } as unknown as T;
   }
 
   // /integrations/:id/sync
@@ -437,4 +470,18 @@ export function mockPost<T>(path: string, body: unknown): T {
   }
 
   throw new Error(`[demo] No mock POST handler for ${path}`);
+}
+
+export function mockDelete<T>(path: string): T {
+  const bare = path.split('?')[0];
+  const keyMatch = matchPath('/admin/agent-keys/:id', bare);
+  if (keyMatch) {
+    const key = agentKeys.find((candidate) => candidate.id === keyMatch.id);
+    if (!key) throw new Error('Agent key not found or already revoked.');
+    key.revokedAt = new Date().toISOString();
+    key.status = 'revoked';
+    return key as unknown as T;
+  }
+
+  throw new Error(`[demo] No mock DELETE handler for ${path}`);
 }

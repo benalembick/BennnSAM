@@ -11,10 +11,26 @@ BENNSAM_API_KEY is not set.
 Fix:
 
 ```powershell
+[Environment]::SetEnvironmentVariable("BENNSAM_API_KEY", "your-api-key", "User")
 $env:BENNSAM_API_KEY = "your-api-key"
 ```
 
-For managed deployment, set the variable in the user or machine environment before startup.
+For managed deployment, pass `-ApiKey` to `scripts/install-user.ps1`, or set the variable in the user or machine environment before startup.
+
+## API Rejects Uploads
+
+Symptom:
+
+```text
+Upload failed (401)
+```
+
+Fix:
+
+- Confirm the key exists and is active in BennnSAM Admin.
+- Confirm `supabase/migrations/003_agent_api_keys.sql` has been applied.
+- Confirm the agent user's `BENNSAM_API_KEY` exactly matches the generated key shown at creation time.
+- Confirm `api.primaryEndpoint` points to the BennnSAM API host, for example `https://yourdomain.com`.
 
 ## Upload Requires Confirmation
 

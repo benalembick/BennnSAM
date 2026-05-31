@@ -5,7 +5,9 @@ import {
   CheckCircle2,
   CircleDollarSign,
   CloudCog,
+  Copy,
   Cpu,
+  Database,
   Download,
   FileInput,
   FileText,
@@ -14,10 +16,12 @@ import {
   LibraryBig,
   PackageSearch,
   Play,
+  Plus,
   RefreshCw,
   Save,
   ShieldAlert,
   Sparkles,
+  Trash2,
   Upload,
   Users
 } from 'lucide-react';
@@ -30,11 +34,12 @@ import { ErrorState, LoadingState } from '../components/LoadingState';
 import { MetricCard } from '../components/MetricCard';
 import { StatusBadge } from '../components/StatusBadge';
 import { Button, ChartCard, InsightCard, PageHeader, cardSurface } from '../components/ui';
-import { apiGet, apiPost } from '../lib/api';
+import { apiDelete, apiGet, apiPost } from '../lib/api';
 import { downloadCsv, readCsv } from '../lib/csv';
 import { currency, date, number, titleCase } from '../lib/format';
 import type {
   Application,
+  AgentKey,
   AssistantReport,
   BootstrapData,
   ComplianceResult,
@@ -49,7 +54,8 @@ import type {
   ReportDefinition,
   SaaSDetection,
   SavingsRecommendation,
-  UsageEvent
+  UsageEvent,
+  CreatedAgentKey
 } from '../lib/types';
 
 type UsagePayload = {
@@ -343,13 +349,17 @@ export function DevicesPage({ globalSearch }: { globalSearch: string }) {
   const rows = filterBySearch(data, globalSearch);
 
   async function uploadMockAgent() {
-    const response = await apiPost<{ uploadId: string; message: string }>('/agent/upload', {
-      hostname: 'BSAM-DEMO-UPLOAD',
-      installedSoftware: ['Microsoft 365', 'Slack'],
-      runningProcesses: ['outlook.exe', 'slack.exe'],
-      browserEvents: ['slack.com', 'office.com']
-    });
-    setUploadState(`${response.uploadId}: ${response.message}`);
+    try {
+      const response = await apiPost<{ uploadId: string; message: string }>('/agent/upload', {
+        hostname: 'BSAM-DEMO-UPLOAD',
+        installedSoftware: ['Microsoft 365', 'Slack'],
+        runningProcesses: ['outlook.exe', 'slack.exe'],
+        browserEvents: ['slack.com', 'office.com']
+      });
+      setUploadState(`${response.uploadId}: ${response.message}`);
+    } catch (err) {
+      setUploadState(err instanceof Error ? err.message : 'Agent upload failed.');
+    }
   }
 
   return (
@@ -1041,18 +1051,129 @@ export function ReportsPage({ globalSearch }: { globalSearch: string }) {
 
 export function AdminPage({ globalSearch }: { globalSearch: string }) {
   const { data, loading, error } = useData<BootstrapData>('/bootstrap');
+  const { data: agentKeys, loading: keysLoading, error: keysError, refresh: refreshKeys } = useData<AgentKey[]>('/admin/agent-keys');
+  const [keyName, setKeyName] = useState('Windows rollout key');
+  const [createdKey, setCreatedKey] = useState<CreatedAgentKey | null>(null);
+  const [keyActionError, setKeyActionError] = useState<string | null>(null);
   if (loading) return <LoadingState label="Loading roles" />;
   if (error || !data) return <ErrorState message={error ?? 'Admin unavailable'} />;
   const users = filterBySearch(data.users, globalSearch);
+  const visibleKeys = filterBySearch(agentKeys ?? [], globalSearch);
   const roles = ['Platform Admin', 'SAM Manager', 'Licence Manager', 'Security Viewer', 'Finance Viewer', 'Department Owner', 'Read Only'];
+
+  async function createAgentKey() {
+    setKeyActionError(null);
+    try {
+      const response = await apiPost<CreatedAgentKey>('/admin/agent-keys', { name: keyName });
+      setCreatedKey(response);
+      refreshKeys();
+    } catch (err) {
+      setKeyActionError(err instanceof Error ? err.message : 'Unable to create agent key.');
+    }
+  }
+
+  async function revokeAgentKey(id: string) {
+    setKeyActionError(null);
+    try {
+      await apiDelete<AgentKey>(`/admin/agent-keys/${id}`);
+      refreshKeys();
+    } catch (err) {
+      setKeyActionError(err instanceof Error ? err.message : 'Unable to revoke agent key.');
+    }
+  }
+
+  async function copyText(value: string) {
+    await navigator.clipboard?.writeText(value);
+  }
 
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-3">
         <MiniStat label="Demo login" value="ava.collins@demo.bennnsam.local" />
-        <MiniStat label="Tenant isolation" value="RLS ready" />
+        <MiniStat label="Live database" value={keysError ? 'needs config' : 'Supabase'} />
         <MiniStat label="Roles" value={roles.length} />
       </div>
+      <Panel title="Agent API Keys">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="min-w-0">
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row">
+              <input
+                className="min-w-0 flex-1 rounded-md border-slate-200 text-sm focus:border-cyan-500 focus:ring-cyan-500"
+                value={keyName}
+                onChange={(event) => setKeyName(event.target.value)}
+                placeholder="Key name"
+              />
+              <button className="inline-flex items-center justify-center gap-2 rounded-md bg-cyan-700 px-3 py-2 text-sm font-semibold text-white hover:bg-cyan-800" onClick={createAgentKey} type="button">
+                <Plus className="h-4 w-4" />
+                Generate key
+              </button>
+            </div>
+            {keysError ? (
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{keysError}</div>
+            ) : keyActionError ? (
+              <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{keyActionError}</div>
+            ) : null}
+            <div className="mt-3 overflow-hidden rounded-md border border-slate-200">
+              <div className="grid grid-cols-[1.2fr_1fr_1fr_auto] gap-3 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase text-slate-500">
+                <span>Name</span>
+                <span>Prefix</span>
+                <span>Last used</span>
+                <span>Status</span>
+              </div>
+              {keysLoading ? (
+                <div className="px-3 py-4 text-sm text-slate-500">Loading agent keys...</div>
+              ) : visibleKeys.length ? (
+                visibleKeys.map((key) => (
+                  <div className="grid grid-cols-[1.2fr_1fr_1fr_auto] items-center gap-3 border-t border-slate-100 px-3 py-2 text-sm" key={key.id}>
+                    <span className="min-w-0 truncate font-medium text-slate-800">{key.name}</span>
+                    <span className="font-mono text-xs text-slate-600">{key.keyPrefix}</span>
+                    <span className="text-slate-600">{key.lastUsedAt ? date(key.lastUsedAt) : 'Never'}</span>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge value={key.status === 'active' ? 'approved' : 'not connected'} />
+                      {key.status === 'active' ? (
+                        <button className="rounded-md p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-700" onClick={() => revokeAgentKey(key.id)} type="button" title="Revoke key">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="px-3 py-4 text-sm text-slate-500">No agent keys have been created for this tenant.</div>
+              )}
+            </div>
+          </div>
+          <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-800">
+              <Database className="h-4 w-4 text-cyan-700" />
+              Supabase-backed keys
+            </div>
+            <p className="text-sm text-slate-600">Keys are tenant-scoped and stored as hashes. The full secret is shown only immediately after generation.</p>
+            {createdKey ? (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <div className="mb-1 text-xs font-semibold uppercase text-slate-500">New API key</div>
+                  <div className="flex min-w-0 items-center gap-2 rounded-md bg-white p-2">
+                    <code className="min-w-0 flex-1 truncate text-xs text-slate-700">{createdKey.apiKey}</code>
+                    <button className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100" onClick={() => copyText(createdKey.apiKey)} type="button" title="Copy key">
+                      <Copy className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-1 text-xs font-semibold uppercase text-slate-500">Install command</div>
+                  <div className="flex min-w-0 items-start gap-2 rounded-md bg-slate-950 p-2 text-white">
+                    <code className="min-w-0 flex-1 break-words text-xs">{createdKey.installCommand}</code>
+                    <button className="rounded-md p-1.5 text-slate-300 hover:bg-white/10" onClick={() => copyText(createdKey.installCommand)} type="button" title="Copy command">
+                      <Copy className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </Panel>
       <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
         <DataTable
           title="Users and Profiles"

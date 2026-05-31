@@ -112,6 +112,18 @@ supabase db reset
 
 Then update `.env` with the local anon and service role keys shown by the Supabase CLI.
 
+Agent API keys are managed from the BennnSAM Admin page and stored in Supabase as SHA-256 hashes. The API server needs a service-role connection so it can create, revoke and validate tenant-scoped agent keys:
+
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+BENNSAM_DEFAULT_TENANT_ID=00000000-0000-0000-0000-000000000001
+BENNSAM_DEFAULT_TENANT_NAME=Northstar Manufacturing
+BENNSAM_DEFAULT_TENANT_SLUG=northstar
+```
+
+Run all migrations, including [supabase/migrations/003_agent_api_keys.sql](supabase/migrations/003_agent_api_keys.sql), before generating keys.
+
 ## API Routes
 
 - `GET /api/overview`
@@ -139,11 +151,28 @@ Then update `.env` with the local anon and service role keys shown by the Supaba
 - `POST /api/reports/run`
 - `POST /api/imports/csv`
 - `POST /api/agent/upload`
+- `POST /v1/agents/:deviceId/inventory`
 - `POST /api/assistant/query`
 
 ## MVP Notes
 
-The mock agent upload is intentionally lightweight. It accepts inventory-style facts such as installed software, running processes, browser/SaaS events, and local attributes, then stages them for normalization. It does not perform invasive endpoint monitoring.
+The Windows inventory agent lives in [_inventory-agent](_inventory-agent). Create tenant-scoped agent keys in the Admin page. BennnSAM stores only hashed keys in Supabase and shows the full API key once, together with the install command. The agent sends compressed JSON inventory to `/v1/agents/{deviceId}/inventory`; `/api/agent/upload` is kept as a compatible upload endpoint. Payloads are staged for normalization and do not perform invasive endpoint monitoring.
+
+For local testing:
+
+```powershell
+npm run dev:api
+```
+
+In another PowerShell session:
+
+```powershell
+cd .\_inventory-agent
+(Get-Content .\agent-config.json) -replace 'https://api.bennsam.io', 'http://localhost:4100' | Set-Content .\agent-config.local.json -Encoding utf8
+dotnet publish .\BennnSAM.Agent.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true -o .\publish\win-x64
+Copy-Item .\agent-config.local.json .\publish\win-x64\agent-config.json -Force
+.\_inventory-agent\scripts\install-user.ps1 -SourceExe .\_inventory-agent\publish\win-x64\agent.exe -Config .\_inventory-agent\agent-config.json -ApiKey "key-generated-from-admin" -RunInitialScan
+```
 
 The AI report assistant uses safe deterministic templates unless an LLM integration is later added behind `OPENAI_API_KEY`. The current implementation maps natural-language prompts to predefined report templates and returns rows, charts, and CSV export.
 

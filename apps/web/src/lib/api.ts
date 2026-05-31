@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { mockGet, mockPost } from './mockApi';
+import { mockDelete, mockGet, mockPost } from './mockApi';
 
 // When built with VITE_DEMO_MODE=true, every API call is served from the
 // bundled demo data — no Node API needed (works as pure static files on cPanel).
@@ -13,19 +13,26 @@ export const supabase =
     : null;
 
 export async function apiGet<T>(path: string): Promise<T> {
-  if (DEMO_MODE) return Promise.resolve(mockGet<T>(path));
+  if (DEMO_MODE && !path.startsWith('/admin/')) return Promise.resolve(mockGet<T>(path));
   const response = await fetch(`${apiBase}${path}`);
   await ensureOk(response, path);
   return response.json() as Promise<T>;
 }
 
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  if (DEMO_MODE) return Promise.resolve(mockPost<T>(path, body));
+  if (DEMO_MODE && !path.startsWith('/admin/')) return Promise.resolve(mockPost<T>(path, body));
   const response = await fetch(`${apiBase}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
+  await ensureOk(response, path);
+  return response.json() as Promise<T>;
+}
+
+export async function apiDelete<T>(path: string): Promise<T> {
+  if (DEMO_MODE && !path.startsWith('/admin/')) return Promise.resolve(mockDelete<T>(path));
+  const response = await fetch(`${apiBase}${path}`, { method: 'DELETE' });
   await ensureOk(response, path);
   return response.json() as Promise<T>;
 }

@@ -15,11 +15,10 @@ Outputs are portable `agent.exe` files. Sign each executable before distribution
 ## No-Admin User Install
 
 ```powershell
-$env:BENNSAM_API_KEY = "tenant-api-key"
-.\scripts\install-user.ps1 -SourceExe .\publish\win-x64\agent.exe -Config .\agent-config.json -RunInitialScan
+.\scripts\install-user.ps1 -SourceExe .\publish\win-x64\agent.exe -Config .\agent-config.json -ApiKey "tenant-api-key" -RunInitialScan
 ```
 
-The installer copies files to `%LOCALAPPDATA%\BennnSAM` and registers a current-user startup entry at:
+The installer copies files to `%LOCALAPPDATA%\BennnSAM`, stores `BENNSAM_API_KEY` in the current user's environment, and registers a current-user startup entry at:
 
 ```text
 HKCU\Software\Microsoft\Windows\CurrentVersion\Run\BennnSAM Agent
@@ -35,8 +34,8 @@ $env:BENNSAM_API_KEY = "tenant-api-key"
 
 ## Enterprise Deployment
 
-- Group Policy logon script: run `scripts/install-user.ps1`.
-- Intune/SCCM user-context deployment: copy `agent.exe` and `agent-config.json`, then run `agent.exe install-startup`.
+- Group Policy logon script: run `scripts/install-user.ps1 -ApiKey "tenant-api-key"`.
+- Intune/SCCM user-context deployment: copy `agent.exe` and `agent-config.json`, set the user or machine `BENNSAM_API_KEY`, then run `agent.exe install-startup`.
 - Air-gapped systems: run `agent.exe scan`; encrypted queue files remain in `%LOCALAPPDATA%\BennnSAM\Queue` until upload is possible.
 
 ## Scheduled Operation
@@ -57,3 +56,4 @@ Register-ScheduledTask -TaskName "BennnSAM Agent" -Action $action -Trigger $trig
 ```
 
 This removes the current-user startup entry and deletes local logs, cache, queue, and configuration.
+It also removes `BENNSAM_API_KEY` from the current user's environment.

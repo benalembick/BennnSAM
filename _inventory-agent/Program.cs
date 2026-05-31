@@ -44,6 +44,17 @@ try
             Console.WriteLine("Installed current-user startup entry.");
             return 0;
 
+        case "set-key":
+            var newKey = args.ElementAtOrDefault(1);
+            if (string.IsNullOrWhiteSpace(newKey))
+            {
+                Console.Error.WriteLine("Usage: agent.exe set-key <api-key>");
+                return 2;
+            }
+            Environment.SetEnvironmentVariable("BENNSAM_API_KEY", newKey, EnvironmentVariableTarget.User);
+            Console.WriteLine("API key updated.");
+            return 0;
+
         case "uninstall":
             Uninstall(paths);
             Console.WriteLine("Removed startup entry and local BennnSAM data.");
@@ -116,6 +127,8 @@ static void Uninstall(AgentPaths paths)
     {
         Directory.Delete(paths.Root, recursive: true);
     }
+
+    Environment.SetEnvironmentVariable("BENNSAM_API_KEY", null, EnvironmentVariableTarget.User);
 }
 
 static void PrintHelp()
@@ -127,6 +140,7 @@ static void PrintHelp()
     Console.WriteLine("  scan                 Collect and queue encrypted inventory locally.");
     Console.WriteLine("  upload --yes         Upload queued payloads.");
     Console.WriteLine("  once --yes           Collect, queue, and upload.");
+    Console.WriteLine("  set-key <key>        Store API key in user environment.");
     Console.WriteLine("  install-startup      Add current-user startup entry.");
     Console.WriteLine("  uninstall            Remove startup entry and local BennnSAM data.");
 }

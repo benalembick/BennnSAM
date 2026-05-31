@@ -6,3 +6,4 @@ obj/
 publish/
 .dotnet/
 .tools/
+.vscode/
